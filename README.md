@@ -1,115 +1,154 @@
-![npm version](https://badge.fury.io/js/unlimited-ai.svg) ![npm downloads](https://img.shields.io/npm/d18m/unlimited-ai.svg?maxAge=3600) ![last commit](https://img.shields.io/github/last-commit/otoneko1102/unlimited-ai) ![commit actvity](https://img.shields.io/github/commit-activity/w/otoneko1102/unlimited-ai) ![code size](https://img.shields.io/github/languages/code-size/otoneko1102/unlimited-ai)
-<br>
-[![NPM](https://nodei.co/npm/unlimited-ai.png)](https://nodei.co/npm/unlimited-ai/)
 # unlimited-ai
-Provides unlimited AI answers for Node.js.<br>
-Powered by [Voids API](https://voids.top/).
 
-> ⚠ At the request of the Voids API owner, the specifications of some functions have been changed. ⚠
+Fast, minimal Node.js wrapper for the [Voids API](https://voids.top/).
 
-> ⚠ The Voids API owner has stated that an API key will be required in the future. ⚠
-
-> Note: The Voids API is not owned or operated by the developer of this package, so please do not contact us through GitHub Issues or other such inquiries about the API being down.
-
-###### Teams
-<a href="https://oto.pet/"><img src="https://www.otoneko.cat/img/logo.png" alt="OTONEKO.CAT" style="display: block; width: auto; height: 100px;"/></a>
-<a href="https://www.otoho.me/"><img src="https://www.otoho.me/img/logo.png" alt="Oto Home" style="display: block; width: auto; height: 100px;"/></a>
-
-## Usage
-- Example with class: [class.js](https://github.com/otoneko1102/unlimited-ai/tree/main/examples/class.js)
-- Example (gemini): [gemini.js](https://github.com/otoneko1102/unlimited-ai/tree/main/examples/gemini.js)
-- Example (gpt): [gpt-4.js](https://github.com/otoneko1102/unlimited-ai/tree/main/examples/gpt-4.js)
-- Example with search: [with-search.js](https://github.com/otoneko1102/unlimited-ai/tree/main/examples/with-search.js)
-
-### AI(format?: { model?: string, messages?: Array\<{ role: string, content: string }\> })
-  #### setModel(model: string, search?: boolean, all?: boolean): AI
-  #### setMessages(messages: Array\<{ role: string, content: string }\>): AI
-  #### addMessage(message: { role: string, content: string }): AI
-  #### removeMessage(index: Integer): AI
-  #### generate(raw?: boolean): Promise\<string | object\>
-  #### getFormat(): { model?: string, messages?: Array\<{ role: string, content: string }\> }
-
-```js
-// Example
-// The model name in this example may be out of date.
-// Please check with .models() or .allModels() for the latest information.
-
-const { AI } = require('unlimited-ai');
-
-(async () => {
-  const ai = new AI();
-  ai
-    .setModel('gpt-4-turbo-2024-04-09')
-    .addMessage({ role: 'user', content: 'Hello!' })
-    .addMesssage({ role: 'system', content: 'You are a 12-year-old girl.' })
-
-  console.log(await ai.generate()); // 'Hello there! How can I be of assistance to you today?'
-})();
+```sh
+npm install unlimited-ai
 ```
 
-### .generate(model, messages, raw): Promise\<string | object\>
-Return string of AI answers (if raw is true, return object).
-```js
-// Example
-// The model name in this example may be out of date.
-// Please check with .models() or .allModels() for the latest information.
+> **Note:** The Voids API is not affiliated with this package. For API issues, do not open GitHub issues here.
 
-const ai = require('unlimited-ai');
+---
 
-(async () => {
-  const model = 'gpt-4-turbo-2024-04-09';
-  const messages = [
-    { role: 'user', content: 'Hello!' },
-    { role: 'system', content: 'You are a 12-year-old girl.' }
-  ];
+## Quick start
 
-  console.log(await ai.generate(model, messages)); // 'Hello there! How can I be of assistance to you today?'
-})();
+```ts
+import { AI } from 'unlimited-ai';
+
+const ai = new AI();
+const reply = await ai
+  .setModel('gpt-4o')
+  .addMessage({ role: 'system', content: 'You are a helpful assistant.' })
+  .addMessage({ role: 'user', content: 'Hello!' })
+  .generate();
+
+console.log(reply);
 ```
 
-#### model: string
-Available models: ai.models()
+Or with the functional API:
 
-#### messages: array
-| role	| description |
-| :--- | :--- |
-| system | Used for providing instructions and context prior to the conversation. |
-| user | Used to identify user messages. |
-| assistant |Used to identify AI messages. |
+```ts
+import { generate, models } from 'unlimited-ai';
 
-#### raw?: boolean (default: false)
+const available = await models();
+console.log(available); // ['gpt-4o', 'gemini-1.5-flash', ...]
 
-### .models(): Promise\<string[]\>
-Return array of available models.
+const reply = await generate('gpt-4o', [
+  { role: 'user', content: 'Hello!' },
+]);
+```
 
-### .allModels(): Promise\<string[]\>
-Return array of all models.
+---
 
-### .searchModels(word, all): Promise\<string[]\>
-Search models.
+## API
 
-#### word: string
-Search keywords.
+### `new AI(init?)`
 
-#### all?: boolean (default: false)
-Search from all or available.
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `init.model` | `string` | Initial model name |
+| `init.messages` | `Message[]` | Initial messages |
 
-### .config: object
-Return URLs.
+#### Methods (all chainable except `generate` and `getFormat`)
 
-## Change Log
-### 5.x --> 6.0.0
-Class has been added.
-### 4.x --> 5.0.0
+| Method | Returns | Description |
+| :--- | :--- | :--- |
+| `setModel(model, search?)` | `this` | Set the model. If `search` is `true`, the name is fuzzy-matched before each call. |
+| `setMessages(messages)` | `this` | Replace the entire messages array. |
+| `addMessage(message)` | `this` | Append a message. |
+| `removeMessage(index)` | `this` | Remove the message at the given index. |
+| `generate(raw?)` | `Promise<string>` | Send the request. Returns the reply string. |
+| `generate(true)` | `Promise<CompletionResponse>` | Returns the full API response object. |
+| `getFormat()` | `{ model, messages }` | Return a copy of the current state. |
+
+---
+
+### `generate(model, messages, raw?)`
+
+Low-level function.
+
+```ts
+import { generate } from 'unlimited-ai';
+
+const reply = await generate('gpt-4o', [
+  { role: 'user', content: 'Hello!' },
+]);
+
+// raw response
+const raw = await generate('gpt-4o', messages, true);
+console.log(raw.choices[0].message.content);
+```
+
+---
+
+### `models()`
+
+Returns all available model IDs from the live Voids API.
+
+```ts
+import { models } from 'unlimited-ai';
+
+const list = await models();
+// ['gpt-4o', 'gpt-4-turbo', 'gemini-1.5-flash', ...]
+```
+
+---
+
+### `searchModels(word)`
+
+Fuzzy-search model IDs by keyword. Useful when you don't know the exact model name.
+
+```ts
+import { searchModels, generate } from 'unlimited-ai';
+
+const [model] = await searchModels('gpt-4');
+const reply = await generate(model, [{ role: 'user', content: 'Hi!' }]);
+```
+
+---
+
+### `config`
+
+The API endpoint URLs used internally.
+
+```ts
+import { config } from 'unlimited-ai';
+
+console.log(config.API_URL);    // https://api.voids.top/v1/chat/completions
+console.log(config.MODELS_URL); // https://api.voids.top/v1/models
+```
+
+---
+
+### `Message` type
+
+```ts
+type Role = 'system' | 'user' | 'assistant';
+
+interface Message {
+  role: Role;
+  content: string;
+}
+```
+
+---
+
+## Change log
+
+### 7.0.0
+Rewritten in TypeScript. `axios` replaced with `ky`. `allModels()` renamed to `models()`. Curated model list removed. `searchModels()` no longer takes an `all` parameter.
+
+### 6.0.0
+`AI` class added.
+
+### 5.0.0
 Model search function added.
-### 3.x --> 4.0.0
-`.models` is no longer supported and has been replaced by `.models()`.
-### 2.x --> 3.0.0
-Developers and development groups have been listed. Features have been optimized.
-### 1.x --> 2.0.0
-TypeScript supported!
-### 0.x --> 1.0.0
-Package released!
 
-## Get Support
-<a href="https://discord.gg/yKW8wWKCnS"><img src="https://discordapp.com/api/guilds/1005287561582878800/widget.png?style=banner4" alt="Discord Banner"/></a>
+### 4.0.0
+`.models` replaced by `.models()`.
+
+---
+
+## Support
+
+[![Discord](https://discordapp.com/api/guilds/1005287561582878800/widget.png?style=banner2)](https://discord.gg/yKW8wWKCnS)

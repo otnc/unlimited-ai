@@ -1,39 +1,47 @@
 {
   "name": "unlimited-ai",
-  "version": "6.2.0-dev.0",
-  "description": "Provides unlimited AI answers for Node.js.",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "version": "7.0.0",
+  "description": "Fast, minimal Node.js wrapper for the Voids API.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsdown",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src tests",
+    "lint:fix": "eslint src tests --fix",
+    "format": "prettier --write src tests",
+    "typecheck": "tsc --noEmit"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/otoneko1102/unlimited-ai.git"
   },
   "keywords": [
-    "api",
-    "gen",
-    "generate",
-    "wrapper",
     "ai",
+    "api",
+    "wrapper",
+    "voids",
     "openai",
-    "chatgpt",
     "gpt",
-    "gpt-turbo",
-    "gpt3",
-    "gpt3-turbo",
-    "gpt3.5",
-    "gpt3.5-turbo",
-    "gpt4",
-    "gpt4-turbo",
-    "gpt4o",
-    "gpt4o-turbo",
-    "google",
-    "bard",
     "gemini",
-    "twitter",
-    "x",
     "grok",
     "deepseek",
     "unlimited",
@@ -46,11 +54,21 @@
   },
   "homepage": "https://github.com/otoneko1102/unlimited-ai#readme",
   "dependencies": {
-    "axios": "^1.7.9",
-    "closewords": "^2.1.4"
+    "closewords": "^2.3.1",
+    "ky": "^2.0.2"
   },
   "devDependencies": {
-    "@types/node": "^22.13.1",
-    "fs-extra": "^11.3.0"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.19.19",
+    "eslint": "^10.4.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.3",
+    "tsdown": "^0.22.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^4.1.6"
+  },
+  "engines": {
+    "node": ">=22.18.0"
   }
 }
