@@ -2,11 +2,20 @@
 
 Fast, minimal Node.js wrapper for the [Voids API](https://voids.top/).
 
+> [!Note]
+>   
+> The Voids API is not affiliated with this package. For API issues, do not open GitHub issues here.
+
 ```sh
 npm install unlimited-ai
 ```
 
-> **Note:** The Voids API is not affiliated with this package. For API issues, do not open GitHub issues here.
+## Welcome to v7.0.0
+Rewritten in TypeScript. `axios` replaced with `ky`. `allModels()` renamed to `models()`. Curated model list removed. `searchModels()` no longer takes an `all` parameter.
+
+> [!Caution]
+>   
+> v6.x and below are no longer supported.
 
 ---
 
@@ -130,22 +139,6 @@ interface Message {
   content: string;
 }
 ```
-
----
-
-## Change log
-
-### 7.0.0
-Rewritten in TypeScript. `axios` replaced with `ky`. `allModels()` renamed to `models()`. Curated model list removed. `searchModels()` no longer takes an `all` parameter.
-
-### 6.0.0
-`AI` class added.
-
-### 5.0.0
-Model search function added.
-
-### 4.0.0
-`.models` replaced by `.models()`.
 
 ---
 
