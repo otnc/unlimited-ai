@@ -55,6 +55,8 @@ console.log(available); // ['gpt-4o', 'gemini-1.5-flash', ...]
 const reply = await generate('gpt-4o', [
   { role: 'user', content: 'Hello!' },
 ]);
+
+console.log(reply);
 ```
 
 ## API
