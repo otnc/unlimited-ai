@@ -1,7 +1,7 @@
 import { generate, stream as streamRequest } from './generate.js';
 import { searchModels } from './search.js';
 import { validateMessage, validateMessages } from './utils.js';
-import type { CompletionResponse, Message } from './types.js';
+import type { CompletionResponse, ConversationStore, Message } from './types.js';
 
 export class AI {
   private model = '';
@@ -102,6 +102,23 @@ export class AI {
 
   deleteConversation(id: string): this {
     this.conversationMap.delete(id);
+    return this;
+  }
+
+  exportConversations(): ConversationStore {
+    const result: ConversationStore = {};
+    for (const [id, messages] of this.conversationMap) {
+      result[id] = [...messages];
+    }
+    return result;
+  }
+
+  importConversations(data: ConversationStore, replace = false): this {
+    if (replace) this.conversationMap.clear();
+    for (const [id, messages] of Object.entries(data)) {
+      validateMessages(messages);
+      this.conversationMap.set(id, [...messages]);
+    }
     return this;
   }
 

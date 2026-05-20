@@ -31,6 +31,8 @@ export interface ModelListResponse {
   }>;
 }
 
+export type ConversationStore = Record<string, Message[]>;
+
 export interface StreamChunk {
   id: string;
   object: string;

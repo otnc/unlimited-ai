@@ -245,4 +245,43 @@ describe('AI — conversation management', () => {
     await ai.ask('hello');
     expect(ai.getConversationMessages('conv-1')).toHaveLength(0);
   });
+
+  it('exportConversations returns a plain object copy of all conversations', async () => {
+    const ai = new AI().setModel('gpt-4');
+    await ai.ask('hello', 'conv-1');
+    await ai.ask('hi', 'conv-2');
+    const exported = ai.exportConversations();
+    expect(Object.keys(exported)).toContain('conv-1');
+    expect(Object.keys(exported)).toContain('conv-2');
+    expect(exported['conv-1']).toHaveLength(2);
+    // must be a copy
+    exported['conv-1']!.push({ role: 'user', content: 'injected' });
+    expect(ai.getConversationMessages('conv-1')).toHaveLength(2);
+  });
+
+  it('importConversations merges by default', async () => {
+    const ai = new AI().setModel('gpt-4');
+    await ai.ask('hello', 'conv-1');
+    ai.importConversations({ 'conv-2': [{ role: 'user', content: 'hi' }] });
+    expect(ai.listConversations()).toContain('conv-1');
+    expect(ai.listConversations()).toContain('conv-2');
+  });
+
+  it('importConversations with replace=true clears existing conversations', async () => {
+    const ai = new AI().setModel('gpt-4');
+    await ai.ask('hello', 'conv-1');
+    ai.importConversations({ 'conv-2': [{ role: 'user', content: 'hi' }] }, true);
+    expect(ai.listConversations()).not.toContain('conv-1');
+    expect(ai.listConversations()).toContain('conv-2');
+  });
+
+  it('round-trips through JSON', async () => {
+    const ai = new AI().setModel('gpt-4');
+    await ai.ask('hello', 'conv-1');
+    const json = JSON.stringify(ai.exportConversations());
+
+    const ai2 = new AI().setModel('gpt-4');
+    ai2.importConversations(JSON.parse(json));
+    expect(ai2.getConversationMessages('conv-1')).toHaveLength(2);
+  });
 });
