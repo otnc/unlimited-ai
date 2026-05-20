@@ -19,7 +19,11 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "examples",
+    "README.md",
+    "README-ja.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsdown",
