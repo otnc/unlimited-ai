@@ -1,6 +1,6 @@
 {
   "name": "unlimited-ai",
-  "version": "7.1.0",
+  "version": "7.1.1",
   "description": "Fast, minimal Node.js wrapper for the Voids API AI chat completions.",
   "type": "module",
   "main": "./dist/index.cjs",
