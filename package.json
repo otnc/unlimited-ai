@@ -32,7 +32,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/oto-lab/unlimited-ai.git"
+    "url": "git+https://github.com/otnc/unlimited-ai.git"
   },
   "keywords": [
     "ai",
@@ -50,11 +50,11 @@
   "author": "otoneko.",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/oto-lab/unlimited-ai/issues"
+    "url": "https://github.com/otnc/unlimited-ai/issues"
   },
-  "homepage": "https://github.com/oto-lab/unlimited-ai#readme",
+  "homepage": "https://github.com/otnc/unlimited-ai#readme",
   "dependencies": {
-    "closewords": "^2.3.1",
+    "closewords": "^3.1.1",
     "ky": "^2.0.2"
   },
   "devDependencies": {
