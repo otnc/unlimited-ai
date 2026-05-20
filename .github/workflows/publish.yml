@@ -41,6 +41,9 @@ jobs:
       - name: Bump version
         run: npm version ${{ inputs.version }} --no-git-tag-version --allow-same-version
 
+      - name: Update lockfile
+        run: npm install --package-lock-only
+
       - name: Publish to npm
         continue-on-error: true
         run: npm publish --access public
@@ -55,7 +58,7 @@ jobs:
       - name: Commit and push version bump
         continue-on-error: true
         run: |
-          git add package.json
+          git add package.json package-lock.json
           git diff --cached --quiet || git commit -m "chore: release v${{ inputs.version }}"
           git push origin HEAD:main
 
