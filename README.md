@@ -77,6 +77,91 @@ Initial static context. These messages are prepended to every request.
 
 ---
 
+### Examples
+
+**Multi-turn with `useConversation`**
+
+```ts
+import { AI } from 'unlimited-ai';
+
+const ai = new AI({ model: 'gpt-4o', system: 'You are a helpful assistant.' });
+
+ai.useConversation('session-1');
+console.log(await ai.ask('What is TypeScript?'));
+console.log(await ai.ask('What about its type system?')); // full history sent
+```
+
+**Per-user histories (inline IDs)**
+
+```ts
+import { AI } from 'unlimited-ai';
+
+const ai = new AI({ model: 'gpt-4o', system: 'You are a helpful assistant.' });
+
+await ai.ask('Hello!', 'user-alice');
+await ai.ask('Hi there!', 'user-bob');
+await ai.ask('Remember me?', 'user-alice'); // alice's history is restored
+```
+
+**Stateless**
+
+```ts
+const reply = await ai.ask('What is 2 + 2?');
+// Sends static context + this prompt only. Nothing is saved.
+```
+
+**Streaming**
+
+```ts
+import { AI } from 'unlimited-ai';
+
+const ai = new AI({ model: 'gpt-4o' });
+
+ai.useConversation('session-1');
+for await (const chunk of ai.stream('Tell me a joke.')) {
+  process.stdout.write(chunk);
+}
+// The full reply is appended to session-1 automatically.
+```
+
+**Persisting conversations across restarts**
+
+```ts
+import { AI } from 'unlimited-ai';
+import { readFileSync, writeFileSync } from 'node:fs';
+
+const ai = new AI({ model: 'gpt-4o' });
+
+// Restore saved conversations on startup
+try {
+  const saved = JSON.parse(readFileSync('conversations.json', 'utf-8'));
+  ai.importConversations(saved);
+} catch { /* no saved file yet */ }
+
+ai.useConversation('session-1');
+console.log(await ai.ask('Hello!'));
+
+// Save all conversations before shutting down
+writeFileSync('conversations.json', JSON.stringify(ai.exportConversations()));
+```
+
+**Traditional (manual history)**
+
+```ts
+import { AI } from 'unlimited-ai';
+
+const ai = new AI();
+const reply = await ai
+  .setModel('gpt-4o')
+  .addMessage({ role: 'system', content: 'You are a helpful assistant.' })
+  .addMessage({ role: 'user', content: 'Hello!' })
+  .generate();
+
+console.log(reply);
+```
+
+---
+
 ### Static context
 
 Static context messages are prepended to every request. Useful for system prompts and few-shot examples. All methods return `this` and are chainable.
@@ -271,7 +356,7 @@ Conversation ID.
 #### `clearConversation(id)`
 
 ```ts
-clearConversation(id): this
+clearConversation(id: string): this
 ```
 
 Empties the message history for the given conversation without removing the conversation itself.
@@ -327,91 +412,6 @@ When `false` (default), incoming conversations are merged with existing ones. Wh
 
 ---
 
-### Examples
-
-**Multi-turn with `useConversation`**
-
-```ts
-import { AI } from 'unlimited-ai';
-
-const ai = new AI({ model: 'gpt-4o', system: 'You are a helpful assistant.' });
-
-ai.useConversation('session-1');
-console.log(await ai.ask('What is TypeScript?'));
-console.log(await ai.ask('What about its type system?')); // full history sent
-```
-
-**Per-user histories (inline IDs)**
-
-```ts
-import { AI } from 'unlimited-ai';
-
-const ai = new AI({ model: 'gpt-4o', system: 'You are a helpful assistant.' });
-
-await ai.ask('Hello!', 'user-alice');
-await ai.ask('Hi there!', 'user-bob');
-await ai.ask('Remember me?', 'user-alice'); // alice's history is restored
-```
-
-**Stateless**
-
-```ts
-const reply = await ai.ask('What is 2 + 2?');
-// Sends static context + this prompt only. Nothing is saved.
-```
-
-**Streaming**
-
-```ts
-import { AI } from 'unlimited-ai';
-
-const ai = new AI({ model: 'gpt-4o' });
-
-ai.useConversation('session-1');
-for await (const chunk of ai.stream('Tell me a joke.')) {
-  process.stdout.write(chunk);
-}
-// The full reply is appended to session-1 automatically.
-```
-
-**Persisting conversations across restarts**
-
-```ts
-import { AI } from 'unlimited-ai';
-import { readFileSync, writeFileSync } from 'node:fs';
-
-const ai = new AI({ model: 'gpt-4o' });
-
-// Restore saved conversations on startup
-try {
-  const saved = JSON.parse(readFileSync('conversations.json', 'utf-8'));
-  ai.importConversations(saved);
-} catch { /* no saved file yet */ }
-
-ai.useConversation('session-1');
-console.log(await ai.ask('Hello!'));
-
-// Save all conversations before shutting down
-writeFileSync('conversations.json', JSON.stringify(ai.exportConversations()));
-```
-
-**Traditional (manual history)**
-
-```ts
-import { AI } from 'unlimited-ai';
-
-const ai = new AI();
-const reply = await ai
-  .setModel('gpt-4o')
-  .addMessage({ role: 'system', content: 'You are a helpful assistant.' })
-  .addMessage({ role: 'user', content: 'Hello!' })
-  .generate();
-
-console.log(reply);
-```
-
----
-
 ## Functional API
 
 ### `generate(model, messages, raw?)`
@@ -419,6 +419,16 @@ console.log(reply);
 ```ts
 generate(model: string, messages: Message[], raw?: false): Promise<string>
 generate(model: string, messages: Message[], raw: true): Promise<CompletionResponse>
+```
+
+```ts
+import { generate } from 'unlimited-ai';
+
+const reply = await generate('gpt-4o', [{ role: 'user', content: 'Hello!' }]);
+
+// Full response object
+const raw = await generate('gpt-4o', messages, true);
+console.log(raw.choices[0]?.message.content);
 ```
 
 Sends a chat completion request and returns the result.
@@ -432,22 +442,19 @@ Conversation messages to send.
 **`raw`** `boolean` *(optional, default: `false`)*  
 When `true`, returns the full `CompletionResponse` object instead of just the reply string.
 
-```ts
-import { generate } from 'unlimited-ai';
-
-const reply = await generate('gpt-4o', [{ role: 'user', content: 'Hello!' }]);
-
-// Full response object
-const raw = await generate('gpt-4o', messages, true);
-console.log(raw.choices[0]?.message.content);
-```
-
 ---
 
 ### `ask(model, prompt, system?)`
 
 ```ts
 ask(model: string, prompt: string, system?: string): Promise<string>
+```
+
+```ts
+import { ask } from 'unlimited-ai';
+
+const reply = await ask('gpt-4o', 'Hello!', 'You are a helpful assistant.');
+console.log(reply);
 ```
 
 One-shot helper that sends a single user message and returns the reply.
@@ -461,19 +468,20 @@ The user message to send.
 **`system`** `string` *(optional)*  
 System prompt. If provided, it is prepended as a `system` message.
 
-```ts
-import { ask } from 'unlimited-ai';
-
-const reply = await ask('gpt-4o', 'Hello!', 'You are a helpful assistant.');
-console.log(reply);
-```
-
 ---
 
 ### `stream(model, messages)`
 
 ```ts
 stream(model: string, messages: Message[]): AsyncGenerator<string>
+```
+
+```ts
+import { stream } from 'unlimited-ai';
+
+for await (const chunk of stream('gpt-4o', [{ role: 'user', content: 'Hello!' }])) {
+  process.stdout.write(chunk);
+}
 ```
 
 Sends a chat completion request with streaming enabled and yields reply chunks as they arrive.
@@ -487,14 +495,6 @@ Conversation messages to send.
 **Yields** `string`  
 Successive text chunks of the reply.
 
-```ts
-import { stream } from 'unlimited-ai';
-
-for await (const chunk of stream('gpt-4o', [{ role: 'user', content: 'Hello!' }])) {
-  process.stdout.write(chunk);
-}
-```
-
 ---
 
 ### `models()`
@@ -503,8 +503,6 @@ for await (const chunk of stream('gpt-4o', [{ role: 'user', content: 'Hello!' }]
 models(): Promise<string[]>
 ```
 
-Fetches the list of available model IDs from the API.
-
 ```ts
 import { models } from 'unlimited-ai';
 
@@ -512,12 +510,21 @@ const list = await models();
 // ['gpt-4o', 'gpt-4-turbo', 'gemini-1.5-flash', ...]
 ```
 
+Fetches the list of available model IDs from the API.
+
 ---
 
 ### `searchModels(word)`
 
 ```ts
 searchModels(word: string): Promise<string[]>
+```
+
+```ts
+import { searchModels, generate } from 'unlimited-ai';
+
+const [model] = await searchModels('gpt-4');
+const reply = await generate(model, [{ role: 'user', content: 'Hi!' }]);
 ```
 
 Fuzzy-searches available model IDs by keyword and returns the closest matches.
@@ -528,19 +535,17 @@ Search keyword.
 **Returns** `Promise<string[]>`  
 Matching model IDs, ordered by similarity.
 
-```ts
-import { searchModels, generate } from 'unlimited-ai';
-
-const [model] = await searchModels('gpt-4');
-const reply = await generate(model, [{ role: 'user', content: 'Hi!' }]);
-```
-
 ---
 
 ### `config`
 
 ```ts
 import { config } from 'unlimited-ai';
+```
+
+```ts
+console.log(config.API_URL);    // https://api.voids.top/v1/chat/completions
+console.log(config.MODELS_URL); // https://api.voids.top/v1/models
 ```
 
 A read-only object with the API endpoint URLs used internally.
@@ -550,11 +555,6 @@ Chat completions endpoint. Default: `https://api.voids.top/v1/chat/completions`
 
 **`config.MODELS_URL`** `string`  
 Models list endpoint. Default: `https://api.voids.top/v1/models`
-
-```ts
-console.log(config.API_URL);    // https://api.voids.top/v1/chat/completions
-console.log(config.MODELS_URL); // https://api.voids.top/v1/models
-```
 
 ---
 
