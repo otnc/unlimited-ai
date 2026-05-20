@@ -54,7 +54,7 @@ jobs:
       - name: Commit and push version bump
         run: |
           git add package.json
-          git commit -m "chore: release v${{ inputs.version }}"
+          git diff --cached --quiet || git commit -m "chore: release v${{ inputs.version }}"
           git push origin HEAD:main
 
       - name: Create and push tag
