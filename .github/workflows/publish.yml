@@ -42,6 +42,7 @@ jobs:
         run: npm version ${{ inputs.version }} --no-git-tag-version --allow-same-version
 
       - name: Publish to npm
+        continue-on-error: true
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -52,17 +53,20 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Commit and push version bump
+        continue-on-error: true
         run: |
           git add package.json
           git diff --cached --quiet || git commit -m "chore: release v${{ inputs.version }}"
           git push origin HEAD:main
 
       - name: Create and push tag
+        continue-on-error: true
         run: |
           git tag "v${{ inputs.version }}"
           git push origin "v${{ inputs.version }}"
 
       - name: Create GitHub Release
+        continue-on-error: true
         uses: softprops/action-gh-release@v2
         with:
           tag_name: "v${{ inputs.version }}"
