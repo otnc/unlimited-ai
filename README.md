@@ -1,6 +1,8 @@
 # unlimited-ai
 
-Fast, minimal Node.js wrapper for the [Voids API](https://voids.top/).
+**English** | [日本語](README-ja.md)
+
+Fast, minimal Node.js wrapper for the [Voids API](https://voids.top/) AI chat completions.
 
 > [!Note]
 > The Voids API is not affiliated with this package. For API issues, do not open GitHub issues here.
@@ -8,8 +10,6 @@ Fast, minimal Node.js wrapper for the [Voids API](https://voids.top/).
 ```sh
 npm install unlimited-ai
 ```
-
-[日本語](README-ja.md)
 
 ## unlimited-ai is back!
 
@@ -27,7 +27,7 @@ Conversation history is now supported via conversation IDs — previously, every
 > [!Caution]
 >
 > v6.x and below are no longer supported.  
-> `models()` below v6.x will not work.
+> Some functions no longer work or have changed. Please update to v7 or later.
 
 ---
 
@@ -72,7 +72,7 @@ Methods return `this` (chainable) unless the table says otherwise.
 | :--- | :--- | :--- |
 | `setModel(model, search?)` | `this` | Set the model. `search: true` enables fuzzy-matching. |
 | `setSystem(content)` | `this` | Set or replace the system prompt. |
-| `setMessages(messages)` | `this` | Replace the static context array. |
+| `setMessages(messages)` | `this` | Replace the static context array entirely. |
 | `addMessage(message)` | `this` | Append a message to static context. |
 | `removeMessage(index)` | `this` | Remove a message by index. |
 | `clearMessages()` | `this` | Clear all static context. |
@@ -90,6 +90,8 @@ Methods return `this` (chainable) unless the table says otherwise.
 | `getConversationMessages(id)` | `Message[]` | Return a copy of a conversation's history. |
 | `clearConversation(id)` | `this` | Empty a conversation's history. |
 | `deleteConversation(id)` | `this` | Remove a conversation entirely. |
+| `exportConversations()` | `ConversationStore` | Return a plain-object copy of all conversations (JSON-serializable). |
+| `importConversations(data, replace?)` | `this` | Load conversations from a plain object. Merges by default; pass `true` to replace all existing conversations. |
 
 ### Examples
 
@@ -136,6 +138,27 @@ for await (const chunk of ai.stream('Tell me a joke.')) {
   process.stdout.write(chunk);
 }
 // The full reply is appended to session-1 automatically.
+```
+
+**Persisting conversations across restarts**
+
+```ts
+import { AI } from 'unlimited-ai';
+import { readFileSync, writeFileSync } from 'node:fs';
+
+const ai = new AI({ model: 'gpt-4o' });
+
+// Restore saved conversations on startup
+try {
+  const saved = JSON.parse(readFileSync('conversations.json', 'utf-8'));
+  ai.importConversations(saved);
+} catch { /* no saved file yet */ }
+
+ai.useConversation('session-1');
+console.log(await ai.ask('Hello!'));
+
+// Save all conversations before shutting down
+writeFileSync('conversations.json', JSON.stringify(ai.exportConversations()));
 ```
 
 **Traditional (manual history)**
@@ -228,6 +251,8 @@ interface Message {
   role: Role;
   content: string;
 }
+
+type ConversationStore = Record<string, Message[]>;
 
 interface CompletionResponse {
   id: string;
