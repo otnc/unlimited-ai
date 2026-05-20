@@ -90,6 +90,7 @@ console.log(reply);
 | `getConversationMessages(id)` | `Message[]` | 指定した会話の履歴のコピーを返す。 |
 | `clearConversation(id)` | `this` | 指定した会話の履歴を空にする。 |
 | `deleteConversation(id)` | `this` | 指定した会話を完全に削除する。 |
+| `exportConversations(id)` | `Message[]` | 指定した会話の履歴のコピーを返す。 |
 | `exportConversations()` | `ConversationStore` | 全会話のプレーンオブジェクトのコピーを返す（JSON シリアライズ可能）。 |
 | `importConversations(data, replace?)` | `this` | プレーンオブジェクトから会話を読み込む。デフォルトはマージ。`true` を渡すと既存の会話をすべて置き換える。 |
 

@@ -90,6 +90,7 @@ Methods return `this` (chainable) unless the table says otherwise.
 | `getConversationMessages(id)` | `Message[]` | Return a copy of a conversation's history. |
 | `clearConversation(id)` | `this` | Empty a conversation's history. |
 | `deleteConversation(id)` | `this` | Remove a conversation entirely. |
+| `exportConversations(id)` | `Message[]` | Return a copy of a single conversation's history. |
 | `exportConversations()` | `ConversationStore` | Return a plain-object copy of all conversations (JSON-serializable). |
 | `importConversations(data, replace?)` | `this` | Load conversations from a plain object. Merges by default; pass `true` to replace all existing conversations. |
 

@@ -105,10 +105,15 @@ export class AI {
     return this;
   }
 
-  exportConversations(): ConversationStore {
+  exportConversations(id: string): Message[];
+  exportConversations(): ConversationStore;
+  exportConversations(id?: string): ConversationStore | Message[] {
+    if (id !== undefined) {
+      return [...(this.conversationMap.get(id) ?? [])];
+    }
     const result: ConversationStore = {};
-    for (const [id, messages] of this.conversationMap) {
-      result[id] = [...messages];
+    for (const [key, messages] of this.conversationMap) {
+      result[key] = [...messages];
     }
     return result;
   }

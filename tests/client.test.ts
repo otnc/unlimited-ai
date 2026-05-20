@@ -246,6 +246,23 @@ describe('AI — conversation management', () => {
     expect(ai.getConversationMessages('conv-1')).toHaveLength(0);
   });
 
+  it('exportConversations(id) returns a copy of that conversation only', async () => {
+    const ai = new AI().setModel('gpt-4');
+    await ai.ask('hello', 'conv-1');
+    await ai.ask('hi', 'conv-2');
+    const msgs = ai.exportConversations('conv-1');
+    expect(msgs).toHaveLength(2);
+    expect(msgs[0]?.role).toBe('user');
+    // must be a copy
+    msgs.push({ role: 'user', content: 'injected' });
+    expect(ai.getConversationMessages('conv-1')).toHaveLength(2);
+  });
+
+  it('exportConversations(id) returns empty array for unknown id', async () => {
+    const ai = new AI().setModel('gpt-4');
+    expect(ai.exportConversations('unknown')).toEqual([]);
+  });
+
   it('exportConversations returns a plain object copy of all conversations', async () => {
     const ai = new AI().setModel('gpt-4');
     await ai.ask('hello', 'conv-1');
