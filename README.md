@@ -1,115 +1,262 @@
-![npm version](https://badge.fury.io/js/unlimited-ai.svg) ![npm downloads](https://img.shields.io/npm/d18m/unlimited-ai.svg?maxAge=3600) ![last commit](https://img.shields.io/github/last-commit/otoneko1102/unlimited-ai) ![commit actvity](https://img.shields.io/github/commit-activity/w/otoneko1102/unlimited-ai) ![code size](https://img.shields.io/github/languages/code-size/otoneko1102/unlimited-ai)
-<br>
-[![NPM](https://nodei.co/npm/unlimited-ai.png)](https://nodei.co/npm/unlimited-ai/)
 # unlimited-ai
-Provides unlimited AI answers for Node.js.<br>
-Powered by [Voids API](https://voids.top/).
 
-> ⚠ At the request of the Voids API owner, the specifications of some functions have been changed. ⚠
+Fast, minimal Node.js wrapper for the [Voids API](https://voids.top/).
 
-> ⚠ The Voids API owner has stated that an API key will be required in the future. ⚠
+> [!Note]
+> The Voids API is not affiliated with this package. For API issues, do not open GitHub issues here.
 
-> Note: The Voids API is not owned or operated by the developer of this package, so please do not contact us through GitHub Issues or other such inquiries about the API being down.
-
-###### Teams
-<a href="https://oto.pet/"><img src="https://www.otoneko.cat/img/logo.png" alt="OTONEKO.CAT" style="display: block; width: auto; height: 100px;"/></a>
-<a href="https://www.otoho.me/"><img src="https://www.otoho.me/img/logo.png" alt="Oto Home" style="display: block; width: auto; height: 100px;"/></a>
-
-## Usage
-- Example with class: [class.js](https://github.com/otoneko1102/unlimited-ai/tree/main/examples/class.js)
-- Example (gemini): [gemini.js](https://github.com/otoneko1102/unlimited-ai/tree/main/examples/gemini.js)
-- Example (gpt): [gpt-4.js](https://github.com/otoneko1102/unlimited-ai/tree/main/examples/gpt-4.js)
-- Example with search: [with-search.js](https://github.com/otoneko1102/unlimited-ai/tree/main/examples/with-search.js)
-
-### AI(format?: { model?: string, messages?: Array\<{ role: string, content: string }\> })
-  #### setModel(model: string, search?: boolean, all?: boolean): AI
-  #### setMessages(messages: Array\<{ role: string, content: string }\>): AI
-  #### addMessage(message: { role: string, content: string }): AI
-  #### removeMessage(index: Integer): AI
-  #### generate(raw?: boolean): Promise\<string | object\>
-  #### getFormat(): { model?: string, messages?: Array\<{ role: string, content: string }\> }
-
-```js
-// Example
-// The model name in this example may be out of date.
-// Please check with .models() or .allModels() for the latest information.
-
-const { AI } = require('unlimited-ai');
-
-(async () => {
-  const ai = new AI();
-  ai
-    .setModel('gpt-4-turbo-2024-04-09')
-    .addMessage({ role: 'user', content: 'Hello!' })
-    .addMesssage({ role: 'system', content: 'You are a 12-year-old girl.' })
-
-  console.log(await ai.generate()); // 'Hello there! How can I be of assistance to you today?'
-})();
+```sh
+npm install unlimited-ai
 ```
 
-### .generate(model, messages, raw): Promise\<string | object\>
-Return string of AI answers (if raw is true, return object).
-```js
-// Example
-// The model name in this example may be out of date.
-// Please check with .models() or .allModels() for the latest information.
+[日本語](README-ja.md)
 
-const ai = require('unlimited-ai');
+## unlimited-ai is back!
 
-(async () => {
-  const model = 'gpt-4-turbo-2024-04-09';
-  const messages = [
-    { role: 'user', content: 'Hello!' },
-    { role: 'system', content: 'You are a 12-year-old girl.' }
-  ];
+Rewritten in TypeScript. `axios` replaced with `ky`.  
+Conversation history is now supported via conversation IDs — previously, every call was stateless.
 
-  console.log(await ai.generate(model, messages)); // 'Hello there! How can I be of assistance to you today?'
-})();
+<details>
+
+<summary>See other changes...</summary>
+
+`allModels()` renamed to `models()`. Curated model list removed. `searchModels()` no longer takes an `all` parameter.
+
+</details>
+
+> [!Caution]
+>
+> v6.x and below are no longer supported.  
+> `models()` below v6.x will not work.
+
+---
+
+## Quick start
+
+```ts
+import { AI } from 'unlimited-ai';
+
+const ai = new AI({ model: 'gpt-4o', system: 'You are a helpful assistant.' });
+console.log(await ai.ask('Hello!'));
 ```
 
-#### model: string
-Available models: ai.models()
+Or with the functional API:
 
-#### messages: array
-| role	| description |
-| :--- | :--- |
-| system | Used for providing instructions and context prior to the conversation. |
-| user | Used to identify user messages. |
-| assistant |Used to identify AI messages. |
+```ts
+import { generate, ask, models } from 'unlimited-ai';
 
-#### raw?: boolean (default: false)
+const list = await models();
+console.log(list); // ['gpt-4o', 'gemini-1.5-flash', ...]
 
-### .models(): Promise\<string[]\>
-Return array of available models.
+const reply = await generate('gpt-4o', [{ role: 'user', content: 'Hello!' }]);
+console.log(reply);
+```
 
-### .allModels(): Promise\<string[]\>
-Return array of all models.
+---
 
-### .searchModels(word, all): Promise\<string[]\>
-Search models.
+## `new AI(init?)`
 
-#### word: string
-Search keywords.
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `init.model` | `string` | Model name |
+| `init.system` | `string` | System prompt |
+| `init.messages` | `Message[]` | Initial static context |
 
-#### all?: boolean (default: false)
-Search from all or available.
+### Methods
 
-### .config: object
-Return URLs.
+Methods return `this` (chainable) unless the table says otherwise.
 
-## Change Log
-### 5.x --> 6.0.0
-Class has been added.
-### 4.x --> 5.0.0
-Model search function added.
-### 3.x --> 4.0.0
-`.models` is no longer supported and has been replaced by `.models()`.
-### 2.x --> 3.0.0
-Developers and development groups have been listed. Features have been optimized.
-### 1.x --> 2.0.0
-TypeScript supported!
-### 0.x --> 1.0.0
-Package released!
+**Static context** — prepended to every request. Useful for system prompts and few-shot examples.
 
-## Get Support
-<a href="https://discord.gg/yKW8wWKCnS"><img src="https://discordapp.com/api/guilds/1005287561582878800/widget.png?style=banner4" alt="Discord Banner"/></a>
+| Method | Returns | Description |
+| :--- | :--- | :--- |
+| `setModel(model, search?)` | `this` | Set the model. `search: true` enables fuzzy-matching. |
+| `setSystem(content)` | `this` | Set or replace the system prompt. |
+| `setMessages(messages)` | `this` | Replace the static context array. |
+| `addMessage(message)` | `this` | Append a message to static context. |
+| `removeMessage(index)` | `this` | Remove a message by index. |
+| `clearMessages()` | `this` | Clear all static context. |
+| `getFormat()` | `{ model, messages }` | Return a snapshot of the current static context. |
+| `generate(raw?)` | `Promise<string>` | Send `this.messages` as-is. Pass `true` for the full response object. |
+
+**Conversations** — per-ID history managed automatically.
+
+| Method | Returns | Description |
+| :--- | :--- | :--- |
+| `useConversation(id)` | `this` | Switch the active conversation. Pass `null` to return to stateless mode. |
+| `ask(prompt, id?)` | `Promise<string>` | Send a message. History is saved when an ID is active or provided; stateless otherwise. |
+| `stream(prompt, id?)` | `AsyncGenerator<string>` | Same as `ask` but streams reply chunks. |
+| `listConversations()` | `string[]` | Return all known conversation IDs. |
+| `getConversationMessages(id)` | `Message[]` | Return a copy of a conversation's history. |
+| `clearConversation(id)` | `this` | Empty a conversation's history. |
+| `deleteConversation(id)` | `this` | Remove a conversation entirely. |
+
+### Examples
+
+**Multi-turn with `useConversation`**
+
+```ts
+import { AI } from 'unlimited-ai';
+
+const ai = new AI({ model: 'gpt-4o', system: 'You are a helpful assistant.' });
+
+ai.useConversation('session-1');
+console.log(await ai.ask('What is TypeScript?'));
+console.log(await ai.ask('What about its type system?')); // full history sent
+```
+
+**Per-user histories (inline IDs)**
+
+```ts
+import { AI } from 'unlimited-ai';
+
+const ai = new AI({ model: 'gpt-4o', system: 'You are a helpful assistant.' });
+
+await ai.ask('Hello!', 'user-alice');
+await ai.ask('Hi there!', 'user-bob');
+await ai.ask('Remember me?', 'user-alice'); // alice's history is restored
+```
+
+**Stateless**
+
+```ts
+const reply = await ai.ask('What is 2 + 2?');
+// Sends static context + this prompt only. Nothing is saved.
+```
+
+**Streaming**
+
+```ts
+import { AI } from 'unlimited-ai';
+
+const ai = new AI({ model: 'gpt-4o' });
+
+ai.useConversation('session-1');
+for await (const chunk of ai.stream('Tell me a joke.')) {
+  process.stdout.write(chunk);
+}
+// The full reply is appended to session-1 automatically.
+```
+
+**Traditional (manual history)**
+
+```ts
+import { AI } from 'unlimited-ai';
+
+const ai = new AI();
+const reply = await ai
+  .setModel('gpt-4o')
+  .addMessage({ role: 'system', content: 'You are a helpful assistant.' })
+  .addMessage({ role: 'user', content: 'Hello!' })
+  .generate();
+
+console.log(reply);
+```
+
+---
+
+## Functional API
+
+### `generate(model, messages, raw?)`
+
+```ts
+import { generate } from 'unlimited-ai';
+
+const reply = await generate('gpt-4o', [{ role: 'user', content: 'Hello!' }]);
+
+// Full response object
+const raw = await generate('gpt-4o', messages, true);
+console.log(raw.choices[0]?.message.content);
+```
+
+### `ask(model, prompt, system?)`
+
+```ts
+import { ask } from 'unlimited-ai';
+
+const reply = await ask('gpt-4o', 'Hello!', 'You are a helpful assistant.');
+console.log(reply);
+```
+
+### `stream(model, messages)` → `AsyncGenerator<string>`
+
+```ts
+import { stream } from 'unlimited-ai';
+
+for await (const chunk of stream('gpt-4o', [{ role: 'user', content: 'Hello!' }])) {
+  process.stdout.write(chunk);
+}
+```
+
+### `models()`
+
+```ts
+import { models } from 'unlimited-ai';
+
+const list = await models();
+// ['gpt-4o', 'gpt-4-turbo', 'gemini-1.5-flash', ...]
+```
+
+### `searchModels(word)`
+
+Fuzzy-search model IDs by keyword.
+
+```ts
+import { searchModels, generate } from 'unlimited-ai';
+
+const [model] = await searchModels('gpt-4');
+const reply = await generate(model, [{ role: 'user', content: 'Hi!' }]);
+```
+
+### `config`
+
+```ts
+import { config } from 'unlimited-ai';
+
+console.log(config.API_URL);    // https://api.voids.top/v1/chat/completions
+console.log(config.MODELS_URL); // https://api.voids.top/v1/models
+```
+
+---
+
+## Types
+
+```ts
+type Role = 'system' | 'user' | 'assistant';
+
+interface Message {
+  role: Role;
+  content: string;
+}
+
+interface CompletionResponse {
+  id: string;
+  object: string;
+  created: number;
+  model: string;
+  choices: Array<{
+    index: number;
+    message: { role: string; content: string };
+    finish_reason: string;
+  }>;
+  usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+}
+
+interface StreamChunk {
+  id: string;
+  object: string;
+  created: number;
+  model: string;
+  choices: Array<{
+    index: number;
+    delta: { content?: string; role?: string };
+    finish_reason: string | null;
+  }>;
+}
+```
+
+---
+
+## Support
+
+[![Discord](https://discordapp.com/api/guilds/1369635074395344998/widget.png?style=banner2)](https://discord.gg/upSpdDgDha)

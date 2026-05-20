@@ -1,0 +1,15 @@
+src/
+tests/
+types/
+examples/
+.github/
+tsconfig.json
+tsdown.config.ts
+vitest.config.ts
+eslint.config.js
+.prettierrc
+.gitignore
+.npmignore
+.env
+*.ts
+!dist/
