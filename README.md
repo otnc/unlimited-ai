@@ -34,7 +34,10 @@ Conversation history is now supported via conversation IDs — previously, every
 ## Quick start
 
 ```ts
+// ESM
 import { AI } from 'unlimited-ai';
+// CJS
+const { AI } = require('unlimited-ai');
 
 const ai = new AI({ model: 'gpt-4o', system: 'You are a helpful assistant.' });
 console.log(await ai.ask('Hello!'));
@@ -43,7 +46,10 @@ console.log(await ai.ask('Hello!'));
 Or with the functional API:
 
 ```ts
+// ESM
 import { generate, ask, models } from 'unlimited-ai';
+// CJS
+const { generate, ask, models } = require('unlimited-ai');
 
 const list = await models();
 console.log(list); // ['gpt-4o', 'gemini-1.5-flash', ...]
@@ -82,7 +88,10 @@ Initial static context. These messages are prepended to every request.
 **Multi-turn with `useConversation`**
 
 ```ts
+// ESM
 import { AI } from 'unlimited-ai';
+// CJS
+const { AI } = require('unlimited-ai');
 
 const ai = new AI({ model: 'gpt-4o', system: 'You are a helpful assistant.' });
 
@@ -94,7 +103,10 @@ console.log(await ai.ask('What about its type system?')); // full history sent
 **Per-user histories (inline IDs)**
 
 ```ts
+// ESM
 import { AI } from 'unlimited-ai';
+// CJS
+const { AI } = require('unlimited-ai');
 
 const ai = new AI({ model: 'gpt-4o', system: 'You are a helpful assistant.' });
 
@@ -113,7 +125,10 @@ const reply = await ai.ask('What is 2 + 2?');
 **Streaming**
 
 ```ts
+// ESM
 import { AI } from 'unlimited-ai';
+// CJS
+const { AI } = require('unlimited-ai');
 
 const ai = new AI({ model: 'gpt-4o' });
 
@@ -127,8 +142,12 @@ for await (const chunk of ai.stream('Tell me a joke.')) {
 **Persisting conversations across restarts**
 
 ```ts
+// ESM
 import { AI } from 'unlimited-ai';
 import { readFileSync, writeFileSync } from 'node:fs';
+// CJS
+const { AI } = require('unlimited-ai');
+const { readFileSync, writeFileSync } = require('node:fs');
 
 const ai = new AI({ model: 'gpt-4o' });
 
@@ -148,7 +167,10 @@ writeFileSync('conversations.json', JSON.stringify(ai.exportConversations()));
 **Traditional (manual history)**
 
 ```ts
+// ESM
 import { AI } from 'unlimited-ai';
+// CJS
+const { AI } = require('unlimited-ai');
 
 const ai = new AI();
 const reply = await ai
@@ -422,7 +444,10 @@ generate(model: string, messages: Message[], raw: true): Promise<CompletionRespo
 ```
 
 ```ts
+// ESM
 import { generate } from 'unlimited-ai';
+// CJS
+const { generate } = require('unlimited-ai');
 
 const reply = await generate('gpt-4o', [{ role: 'user', content: 'Hello!' }]);
 
@@ -451,7 +476,10 @@ ask(model: string, prompt: string, system?: string): Promise<string>
 ```
 
 ```ts
+// ESM
 import { ask } from 'unlimited-ai';
+// CJS
+const { ask } = require('unlimited-ai');
 
 const reply = await ask('gpt-4o', 'Hello!', 'You are a helpful assistant.');
 console.log(reply);
@@ -477,7 +505,10 @@ stream(model: string, messages: Message[]): AsyncGenerator<string>
 ```
 
 ```ts
+// ESM
 import { stream } from 'unlimited-ai';
+// CJS
+const { stream } = require('unlimited-ai');
 
 for await (const chunk of stream('gpt-4o', [{ role: 'user', content: 'Hello!' }])) {
   process.stdout.write(chunk);
@@ -504,7 +535,10 @@ models(): Promise<string[]>
 ```
 
 ```ts
+// ESM
 import { models } from 'unlimited-ai';
+// CJS
+const { models } = require('unlimited-ai');
 
 const list = await models();
 // ['gpt-4o', 'gpt-4-turbo', 'gemini-1.5-flash', ...]
@@ -521,7 +555,10 @@ searchModels(word: string): Promise<string[]>
 ```
 
 ```ts
+// ESM
 import { searchModels, generate } from 'unlimited-ai';
+// CJS
+const { searchModels, generate } = require('unlimited-ai');
 
 const [model] = await searchModels('gpt-4');
 const reply = await generate(model, [{ role: 'user', content: 'Hi!' }]);
@@ -540,7 +577,10 @@ Matching model IDs, ordered by similarity.
 ### `config`
 
 ```ts
+// ESM
 import { config } from 'unlimited-ai';
+// CJS
+const { config } = require('unlimited-ai');
 ```
 
 ```ts
