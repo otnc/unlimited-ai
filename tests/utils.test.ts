@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { isValidMessage, validateMessage, validateMessages } from '../src/utils.js';
+import {
+  isValidMessage,
+  validateMessage,
+  validateMessages,
+  validateRequestOptions,
+} from '../src/utils.js';
 
 describe('isValidMessage', () => {
   it('accepts all valid roles', () => {
@@ -54,5 +59,29 @@ describe('validateMessages', () => {
 
   it('throws TypeError for array with invalid item', () => {
     expect(() => validateMessages([{ role: 'bad', content: 'hi' }])).toThrow(TypeError);
+  });
+});
+
+describe('validateRequestOptions', () => {
+  it('accepts undefined and valid options', () => {
+    expect(() => validateRequestOptions(undefined)).not.toThrow();
+    expect(() =>
+      validateRequestOptions({
+        retry: false,
+        retryDelay: 0,
+        timeout: 1000,
+        headers: { a: 'b' },
+        signal: new AbortController().signal,
+      }),
+    ).not.toThrow();
+  });
+
+  it('rejects invalid values', () => {
+    expect(() => validateRequestOptions(null)).toThrow(TypeError);
+    expect(() => validateRequestOptions({ retry: true })).toThrow(TypeError);
+    expect(() => validateRequestOptions({ retryDelay: -1 })).toThrow(TypeError);
+    expect(() => validateRequestOptions({ timeout: 0 })).toThrow(TypeError);
+    expect(() => validateRequestOptions({ headers: { a: 1 } })).toThrow(TypeError);
+    expect(() => validateRequestOptions({ signal: {} })).toThrow(TypeError);
   });
 });

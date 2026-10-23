@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type * as HttpModule from '../src/http.js';
 
 const mockCompletion = {
   id: 'chatcmpl-test',
@@ -9,16 +10,13 @@ const mockCompletion = {
   usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
 };
 
-vi.mock('ky', () => ({
-  default: {
-    post: vi.fn(() => ({
-      json: vi.fn(async () => mockCompletion),
-    })),
-  },
+vi.mock('../src/http.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof HttpModule>()),
+  http: vi.fn(async () => mockCompletion),
 }));
 
 import { generate, stream, ask } from '../src/generate.js';
-import ky from 'ky';
+import { http } from '../src/http.js';
 
 function createSSEStream(contents: string[]): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
@@ -61,6 +59,30 @@ describe('generate', () => {
       TypeError,
     );
   });
+
+  it('sends a POST request with the request options', async () => {
+    await generate('gpt-4', [{ role: 'user', content: 'hi' }], false, {
+      retry: 3,
+      retryDelay: 500,
+      headers: { 'x-test': '1' },
+    });
+    expect(vi.mocked(http)).toHaveBeenLastCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        method: 'POST',
+        body: { model: 'gpt-4', messages: [{ role: 'user', content: 'hi' }] },
+        retry: 3,
+        retryDelay: 500,
+        headers: { 'x-test': '1' },
+      }),
+    );
+  });
+
+  it('throws TypeError for invalid request options', async () => {
+    await expect(
+      generate('gpt-4', [{ role: 'user', content: 'hi' }], false, { retry: -1 }),
+    ).rejects.toThrow(TypeError);
+  });
 });
 
 describe('ask', () => {
@@ -71,10 +93,10 @@ describe('ask', () => {
 
   it('includes system message when provided', async () => {
     await ask('gpt-4', 'Hello!', 'You are a bot.');
-    expect(vi.mocked(ky.post)).toHaveBeenCalledWith(
+    expect(vi.mocked(http)).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
-        json: expect.objectContaining({
+        body: expect.objectContaining({
           messages: expect.arrayContaining([{ role: 'system', content: 'You are a bot.' }]),
         }),
       }),
@@ -89,7 +111,7 @@ describe('ask', () => {
 describe('stream', () => {
   it('yields content chunks from SSE', async () => {
     const body = createSSEStream(['Hello', '!']);
-    vi.mocked(ky.post).mockReturnValueOnce({ body } as never);
+    vi.mocked(http).mockResolvedValueOnce(body);
 
     const chunks: string[] = [];
     for await (const chunk of stream('gpt-4', [{ role: 'user', content: 'hi' }])) {

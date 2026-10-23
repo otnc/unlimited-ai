@@ -32,7 +32,9 @@
     "lint": "eslint src tests",
     "lint:fix": "eslint src tests --fix",
     "format": "prettier --write src tests",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "docs:build": "kiritan build",
+    "docs:check": "kiritan check && kiritan verify"
   },
   "repository": {
     "type": "git",
@@ -59,13 +61,14 @@
   "homepage": "https://github.com/otnc/unlimited-ai#readme",
   "dependencies": {
     "closewords": "^3.1.1",
-    "ky": "^2.0.2"
+    "ofetch": "^1.5.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^22.19.19",
     "eslint": "^10.4.0",
     "eslint-config-prettier": "^10.1.8",
+    "kiritan": "^0.6.1",
     "prettier": "^3.8.3",
     "tsdown": "^0.22.0",
     "typescript": "^6.0.3",

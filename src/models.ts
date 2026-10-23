@@ -1,8 +1,10 @@
-import ky from 'ky';
 import { config } from './config.js';
-import type { ModelListResponse } from './types.js';
+import { http, toFetchOptions } from './http.js';
+import { validateRequestOptions } from './utils.js';
+import type { ModelListResponse, RequestOptions } from './types.js';
 
-export async function models(): Promise<string[]> {
-  const data = await ky.get(config.MODELS_URL).json<ModelListResponse>();
+export async function models(options?: RequestOptions): Promise<string[]> {
+  validateRequestOptions(options);
+  const data = await http<ModelListResponse>(config.MODELS_URL, toFetchOptions(options));
   return data.data.map((d) => d.id);
 }

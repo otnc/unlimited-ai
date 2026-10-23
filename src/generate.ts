@@ -1,42 +1,57 @@
-import ky from 'ky';
 import { config } from './config.js';
-import { validateMessages } from './utils.js';
-import type { CompletionResponse, Message, StreamChunk } from './types.js';
+import { http, toFetchOptions } from './http.js';
+import { validateMessages, validateRequestOptions } from './utils.js';
+import type { CompletionResponse, Message, RequestOptions, StreamChunk } from './types.js';
 
 export async function generate(
   model: string,
   messages: Message[],
   raw: true,
+  options?: RequestOptions,
 ): Promise<CompletionResponse>;
-export async function generate(model: string, messages: Message[], raw?: false): Promise<string>;
+export async function generate(
+  model: string,
+  messages: Message[],
+  raw?: false,
+  options?: RequestOptions,
+): Promise<string>;
 export async function generate(
   model: string,
   messages: Message[],
   raw = false,
+  options?: RequestOptions,
 ): Promise<string | CompletionResponse> {
   if (typeof model !== 'string' || model.length === 0) {
     throw new TypeError('model must be a non-empty string.');
   }
   validateMessages(messages);
+  validateRequestOptions(options);
 
-  const data = await ky
-    .post(config.API_URL, { json: { model, messages } })
-    .json<CompletionResponse>();
+  const data = await http<CompletionResponse>(config.API_URL, {
+    method: 'POST',
+    body: { model, messages },
+    ...toFetchOptions(options),
+  });
   return raw ? data : (data.choices[0]?.message.content ?? '');
 }
 
-export async function* stream(model: string, messages: Message[]): AsyncGenerator<string> {
+export async function* stream(
+  model: string,
+  messages: Message[],
+  options?: RequestOptions,
+): AsyncGenerator<string> {
   if (typeof model !== 'string' || model.length === 0) {
     throw new TypeError('model must be a non-empty string.');
   }
   validateMessages(messages);
+  validateRequestOptions(options);
 
-  const response = await ky.post(config.API_URL, {
-    json: { model, messages, stream: true },
-    timeout: false,
+  const body = await http(config.API_URL, {
+    method: 'POST',
+    body: { model, messages, stream: true },
+    responseType: 'stream',
+    ...toFetchOptions(options),
   });
-
-  const { body } = response;
   if (!body) throw new Error('Response body is null.');
 
   const reader = body.getReader();
@@ -72,9 +87,14 @@ export async function* stream(model: string, messages: Message[]): AsyncGenerato
   }
 }
 
-export async function ask(model: string, prompt: string, system?: string): Promise<string> {
+export async function ask(
+  model: string,
+  prompt: string,
+  system?: string,
+  options?: RequestOptions,
+): Promise<string> {
   const messages: Message[] = [];
   if (system !== undefined) messages.push({ role: 'system', content: system });
   messages.push({ role: 'user', content: prompt });
-  return generate(model, messages);
+  return generate(model, messages, false, options);
 }
