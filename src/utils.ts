@@ -27,8 +27,17 @@ export function validateMessages(messages: unknown): asserts messages is Message
   }
 }
 
+// Longer delays overflow Node's timers, which then fire immediately.
+const MAX_TIMEOUT = 2 ** 31 - 1;
+
 function isNonNegativeInteger(value: unknown): value is number {
   return Number.isInteger(value) && (value as number) >= 0;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null) return false;
+  const proto: unknown = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
 }
 
 export function validateRequestOptions(
@@ -45,14 +54,15 @@ export function validateRequestOptions(
   if (retryDelay !== undefined && !isNonNegativeInteger(retryDelay)) {
     throw new TypeError('options.retryDelay must be a non-negative integer.');
   }
-  if (timeout !== undefined && !(isNonNegativeInteger(timeout) && timeout > 0)) {
-    throw new TypeError('options.timeout must be a positive integer.');
+  if (
+    timeout !== undefined &&
+    !(isNonNegativeInteger(timeout) && timeout > 0 && timeout <= MAX_TIMEOUT)
+  ) {
+    throw new TypeError(`options.timeout must be a positive integer up to ${MAX_TIMEOUT}.`);
   }
   if (
     headers !== undefined &&
-    (typeof headers !== 'object' ||
-      headers === null ||
-      !Object.values(headers).every((v) => typeof v === 'string'))
+    (!isPlainObject(headers) || !Object.values(headers).every((v) => typeof v === 'string'))
   ) {
     throw new TypeError('options.headers must be an object of string values.');
   }

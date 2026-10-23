@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { http, mergeRequestOptions, toFetchOptions } from '../src/http.js';
+import { applyDeadline, http, mergeRequestOptions, toFetchOptions } from '../src/http.js';
 
 describe('mergeRequestOptions', () => {
   it('lets the override win and merges headers', () => {
@@ -8,6 +8,37 @@ describe('mergeRequestOptions', () => {
       { retry: false, headers: { b: '2' } },
     );
     expect(merged).toEqual({ retry: false, timeout: 1000, headers: { a: '1', b: '2' } });
+  });
+
+  it('ignores undefined override values', () => {
+    expect(mergeRequestOptions({ timeout: 1000 }, { timeout: undefined })).toEqual({
+      timeout: 1000,
+    });
+  });
+
+  it('merges headers case-insensitively', () => {
+    const merged = mergeRequestOptions(
+      { headers: { Authorization: 'Bearer A' } },
+      { headers: { authorization: 'Bearer B' } },
+    );
+    expect(merged.headers).toEqual({ authorization: 'Bearer B' });
+  });
+
+  it('combines both signals', () => {
+    const base = new AbortController();
+    const override = new AbortController();
+    const { signal } = mergeRequestOptions({ signal: base.signal }, { signal: override.signal });
+    base.abort();
+    expect(signal?.aborted).toBe(true);
+  });
+});
+
+describe('applyDeadline', () => {
+  it('replaces timeout with a signal', () => {
+    const result = applyDeadline({ retry: 1, timeout: 1000 });
+    expect(result).not.toHaveProperty('timeout');
+    expect(result.signal).toBeInstanceOf(AbortSignal);
+    expect(result.retry).toBe(1);
   });
 });
 

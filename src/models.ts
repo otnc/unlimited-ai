@@ -5,6 +5,10 @@ import type { ModelListResponse, RequestOptions } from './types.js';
 
 export async function models(options?: RequestOptions): Promise<string[]> {
   validateRequestOptions(options);
-  const data = await http<ModelListResponse>(config.MODELS_URL, toFetchOptions(options));
+  const data = await http<ModelListResponse>(config.MODELS_URL, {
+    // Fails loudly on a non-JSON body (e.g. an HTML error page) instead of returning it as a string.
+    parseResponse: JSON.parse,
+    ...toFetchOptions(options),
+  });
   return data.data.map((d) => d.id);
 }

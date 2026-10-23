@@ -312,9 +312,27 @@ describe('AI — request options', () => {
     await ai.ask('hi', undefined, { timeout: 1000, headers: { b: '2' } });
     expect(vi.mocked(generate)).toHaveBeenLastCalledWith('gpt-4', expect.any(Array), false, {
       retry: 2,
-      timeout: 1000,
       headers: { a: '1', b: '2' },
+      signal: expect.any(AbortSignal),
     });
+  });
+
+  it('shares one deadline between model search and the request', async () => {
+    const ai = new AI({ request: { timeout: 1000 } })
+      .setModel('gpt', true)
+      .addMessage({ role: 'user', content: 'hi' });
+    await ai.generate();
+    const searchSignal = vi.mocked(searchModels).mock.lastCall?.[1]?.signal;
+    const requestSignal = vi.mocked(generate).mock.lastCall?.[3]?.signal;
+    expect(searchSignal).toBeInstanceOf(AbortSignal);
+    expect(requestSignal).toBe(searchSignal);
+  });
+
+  it('does not save the user turn when the request fails', async () => {
+    vi.mocked(generate).mockRejectedValueOnce(new Error('network'));
+    const ai = new AI({ model: 'gpt-4' }).useConversation('c');
+    await expect(ai.ask('hi')).rejects.toThrow('network');
+    expect(ai.getConversationMessages('c')).toEqual([]);
   });
 
   it('lets per-call options override instance options', async () => {

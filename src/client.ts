@@ -1,5 +1,5 @@
 import { generate, stream as streamRequest } from './generate.js';
-import { mergeRequestOptions } from './http.js';
+import { applyDeadline, mergeRequestOptions } from './http.js';
 import { searchModels } from './search.js';
 import { validateMessage, validateMessages, validateRequestOptions } from './utils.js';
 import type { CompletionResponse, ConversationStore, Message, RequestOptions } from './types.js';
@@ -148,7 +148,8 @@ export class AI {
 
   private resolveRequestOptions(options?: RequestOptions): RequestOptions {
     validateRequestOptions(options);
-    return mergeRequestOptions(this.requestOptions, options);
+    // Start the deadline once here so a model search and the request that follows share one timeout.
+    return applyDeadline(mergeRequestOptions(this.requestOptions, options));
   }
 
   private async resolveModel(request: RequestOptions): Promise<string> {
@@ -180,9 +181,15 @@ export class AI {
     if (id !== null) {
       if (!this.conversationMap.has(id)) this.conversationMap.set(id, []);
       const history = this.conversationMap.get(id)!;
-      history.push({ role: 'user', content: prompt });
-      const reply = await generate(model, [...this.messages, ...history], false, request);
-      history.push({ role: 'assistant', content: reply });
+      const userMessage: Message = { role: 'user', content: prompt };
+      const reply = await generate(
+        model,
+        [...this.messages, ...history, userMessage],
+        false,
+        request,
+      );
+      // Saved only after success, so a failed or aborted request leaves no unanswered user turn.
+      history.push(userMessage, { role: 'assistant', content: reply });
       return reply;
     }
 
@@ -205,13 +212,17 @@ export class AI {
     if (id !== null) {
       if (!this.conversationMap.has(id)) this.conversationMap.set(id, []);
       const history = this.conversationMap.get(id)!;
-      history.push({ role: 'user', content: prompt });
+      const userMessage: Message = { role: 'user', content: prompt };
       let fullReply = '';
-      for await (const chunk of streamRequest(model, [...this.messages, ...history], request)) {
+      for await (const chunk of streamRequest(
+        model,
+        [...this.messages, ...history, userMessage],
+        request,
+      )) {
         fullReply += chunk;
         yield chunk;
       }
-      history.push({ role: 'assistant', content: fullReply });
+      history.push(userMessage, { role: 'assistant', content: fullReply });
     } else {
       // Stateless: use static context + prompt, save nothing
       for await (const chunk of streamRequest(

@@ -30,6 +30,8 @@ export async function generate(
   const data = await http<CompletionResponse>(config.API_URL, {
     method: 'POST',
     body: { model, messages },
+    // Fails loudly on a non-JSON body (e.g. an HTML error page) instead of returning it as a string.
+    parseResponse: JSON.parse,
     ...toFetchOptions(options),
   });
   return raw ? data : (data.choices[0]?.message.content ?? '');
