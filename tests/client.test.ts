@@ -13,6 +13,7 @@ vi.mock('../src/search.js', () => ({
 }));
 
 import { AI } from '../src/client.js';
+import { generate, stream } from '../src/generate.js';
 import { searchModels } from '../src/search.js';
 
 describe('AI — core', () => {
@@ -67,7 +68,7 @@ describe('AI — core', () => {
 
   it('uses fuzzy search when enabled', async () => {
     await new AI().setModel('gpt', true).addMessage({ role: 'user', content: 'hi' }).generate();
-    expect(searchModels).toHaveBeenCalledWith('gpt');
+    expect(searchModels).toHaveBeenCalledWith('gpt', expect.any(Object));
   });
 
   it('replaces messages with setMessages', () => {
@@ -128,6 +129,8 @@ describe('AI — ask (stateless)', () => {
     expect(vi.mocked(generate)).toHaveBeenCalledWith(
       'gpt-4',
       expect.arrayContaining([{ role: 'system', content: 'You are helpful.' }]),
+      false,
+      expect.any(Object),
     );
   });
 
@@ -300,5 +303,63 @@ describe('AI — conversation management', () => {
     const ai2 = new AI().setModel('gpt-4');
     ai2.importConversations(JSON.parse(json));
     expect(ai2.getConversationMessages('conv-1')).toHaveLength(2);
+  });
+});
+
+describe('AI — request options', () => {
+  it('merges instance and per-call options', async () => {
+    const ai = new AI({ model: 'gpt-4', request: { retry: 2, headers: { a: '1' } } });
+    await ai.ask('hi', undefined, { timeout: 1000, headers: { b: '2' } });
+    expect(vi.mocked(generate)).toHaveBeenLastCalledWith('gpt-4', expect.any(Array), false, {
+      retry: 2,
+      headers: { a: '1', b: '2' },
+      signal: expect.any(AbortSignal),
+    });
+  });
+
+  it('shares one deadline between model search and the request', async () => {
+    const ai = new AI({ request: { timeout: 1000 } })
+      .setModel('gpt', true)
+      .addMessage({ role: 'user', content: 'hi' });
+    await ai.generate();
+    const searchSignal = vi.mocked(searchModels).mock.lastCall?.[1]?.signal;
+    const requestSignal = vi.mocked(generate).mock.lastCall?.[3]?.signal;
+    expect(searchSignal).toBeInstanceOf(AbortSignal);
+    expect(requestSignal).toBe(searchSignal);
+  });
+
+  it('does not save the user turn when the request fails', async () => {
+    vi.mocked(generate).mockRejectedValueOnce(new Error('network'));
+    const ai = new AI({ model: 'gpt-4' }).useConversation('c');
+    await expect(ai.ask('hi')).rejects.toThrow('network');
+    expect(ai.getConversationMessages('c')).toEqual([]);
+  });
+
+  it('lets per-call options override instance options', async () => {
+    const ai = new AI({ model: 'gpt-4' }).setRequestOptions({ retry: 2 });
+    await ai.ask('hi', undefined, { retry: false });
+    expect(vi.mocked(generate)).toHaveBeenLastCalledWith(
+      'gpt-4',
+      expect.any(Array),
+      false,
+      expect.objectContaining({ retry: false }),
+    );
+  });
+
+  it('passes options to stream', async () => {
+    const ai = new AI({ model: 'gpt-4', request: { retry: 1 } });
+    for await (const _ of ai.stream('hi')) {
+      // drain
+    }
+    expect(vi.mocked(stream)).toHaveBeenLastCalledWith(
+      'gpt-4',
+      expect.any(Array),
+      expect.objectContaining({ retry: 1 }),
+    );
+  });
+
+  it('throws TypeError for invalid request options', () => {
+    expect(() => new AI({ request: { timeout: 0 } })).toThrow(TypeError);
+    expect(() => new AI().setRequestOptions({ retry: 1.5 })).toThrow(TypeError);
   });
 });

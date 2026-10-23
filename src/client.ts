@@ -1,7 +1,8 @@
 import { generate, stream as streamRequest } from './generate.js';
+import { applyDeadline, mergeRequestOptions } from './http.js';
 import { searchModels } from './search.js';
-import { validateMessage, validateMessages } from './utils.js';
-import type { CompletionResponse, ConversationStore, Message } from './types.js';
+import { validateMessage, validateMessages, validateRequestOptions } from './utils.js';
+import type { CompletionResponse, ConversationStore, Message, RequestOptions } from './types.js';
 
 export class AI {
   private model = '';
@@ -9,8 +10,14 @@ export class AI {
   private useSearch = false;
   private conversationMap = new Map<string, Message[]>();
   private activeConversationId: string | null = null;
+  private requestOptions: RequestOptions = {};
 
-  constructor(init?: { model?: string; messages?: Message[]; system?: string }) {
+  constructor(init?: {
+    model?: string;
+    messages?: Message[];
+    system?: string;
+    request?: RequestOptions;
+  }) {
     if (init?.model !== undefined) {
       if (typeof init.model !== 'string' || init.model.length === 0) {
         throw new TypeError('model must be a non-empty string.');
@@ -25,6 +32,16 @@ export class AI {
       if (typeof init.system !== 'string') throw new TypeError('system must be a string.');
       this.messages.unshift({ role: 'system', content: init.system });
     }
+    if (init?.request !== undefined) {
+      validateRequestOptions(init.request);
+      this.requestOptions = { ...init.request };
+    }
+  }
+
+  setRequestOptions(options: RequestOptions): this {
+    validateRequestOptions(options);
+    this.requestOptions = { ...options };
+    return this;
   }
 
   setModel(model: string, search = false): this {
@@ -129,61 +146,90 @@ export class AI {
 
   // --- Core ---
 
-  async generate(raw: true): Promise<CompletionResponse>;
-  async generate(raw?: false): Promise<string>;
-  async generate(raw?: boolean): Promise<string | CompletionResponse> {
+  private resolveRequestOptions(options?: RequestOptions): RequestOptions {
+    validateRequestOptions(options);
+    // Start the deadline once here so a model search and the request that follows share one timeout.
+    return applyDeadline(mergeRequestOptions(this.requestOptions, options));
+  }
+
+  private async resolveModel(request: RequestOptions): Promise<string> {
+    if (!this.useSearch) return this.model;
+    return (await searchModels(this.model, request))[0] ?? this.model;
+  }
+
+  async generate(raw: true, options?: RequestOptions): Promise<CompletionResponse>;
+  async generate(raw?: false, options?: RequestOptions): Promise<string>;
+  async generate(raw?: boolean, options?: RequestOptions): Promise<string | CompletionResponse> {
     if (!this.model) throw new Error('model is not set. Call setModel() first.');
     if (this.messages.length === 0) {
       throw new Error('messages are empty. Call addMessage() or setMessages() first.');
     }
-    const model = this.useSearch ? ((await searchModels(this.model))[0] ?? this.model) : this.model;
-    if (raw) return generate(model, this.messages, true);
-    return generate(model, this.messages);
+    const request = this.resolveRequestOptions(options);
+    const model = await this.resolveModel(request);
+    if (raw) return generate(model, this.messages, true, request);
+    return generate(model, this.messages, false, request);
   }
 
-  async ask(prompt: string, conversationId?: string): Promise<string> {
+  async ask(prompt: string, conversationId?: string, options?: RequestOptions): Promise<string> {
     if (typeof prompt !== 'string') throw new TypeError('prompt must be a string.');
     if (!this.model) throw new Error('model is not set. Call setModel() first.');
 
     const id = conversationId ?? this.activeConversationId;
-    const model = this.useSearch ? ((await searchModels(this.model))[0] ?? this.model) : this.model;
+    const request = this.resolveRequestOptions(options);
+    const model = await this.resolveModel(request);
 
     if (id !== null) {
       if (!this.conversationMap.has(id)) this.conversationMap.set(id, []);
       const history = this.conversationMap.get(id)!;
-      history.push({ role: 'user', content: prompt });
-      const reply = await generate(model, [...this.messages, ...history]);
-      history.push({ role: 'assistant', content: reply });
+      const userMessage: Message = { role: 'user', content: prompt };
+      const reply = await generate(
+        model,
+        [...this.messages, ...history, userMessage],
+        false,
+        request,
+      );
+      // Saved only after success, so a failed or aborted request leaves no unanswered user turn.
+      history.push(userMessage, { role: 'assistant', content: reply });
       return reply;
     }
 
     // Stateless: use static context + prompt, save nothing
-    return generate(model, [...this.messages, { role: 'user', content: prompt }]);
+    return generate(model, [...this.messages, { role: 'user', content: prompt }], false, request);
   }
 
-  async *stream(prompt: string, conversationId?: string): AsyncGenerator<string> {
+  async *stream(
+    prompt: string,
+    conversationId?: string,
+    options?: RequestOptions,
+  ): AsyncGenerator<string> {
     if (typeof prompt !== 'string') throw new TypeError('prompt must be a string.');
     if (!this.model) throw new Error('model is not set. Call setModel() first.');
 
     const id = conversationId ?? this.activeConversationId;
-    const model = this.useSearch ? ((await searchModels(this.model))[0] ?? this.model) : this.model;
+    const request = this.resolveRequestOptions(options);
+    const model = await this.resolveModel(request);
 
     if (id !== null) {
       if (!this.conversationMap.has(id)) this.conversationMap.set(id, []);
       const history = this.conversationMap.get(id)!;
-      history.push({ role: 'user', content: prompt });
+      const userMessage: Message = { role: 'user', content: prompt };
       let fullReply = '';
-      for await (const chunk of streamRequest(model, [...this.messages, ...history])) {
+      for await (const chunk of streamRequest(
+        model,
+        [...this.messages, ...history, userMessage],
+        request,
+      )) {
         fullReply += chunk;
         yield chunk;
       }
-      history.push({ role: 'assistant', content: fullReply });
+      history.push(userMessage, { role: 'assistant', content: fullReply });
     } else {
       // Stateless: use static context + prompt, save nothing
-      for await (const chunk of streamRequest(model, [
-        ...this.messages,
-        { role: 'user', content: prompt },
-      ])) {
+      for await (const chunk of streamRequest(
+        model,
+        [...this.messages, { role: 'user', content: prompt }],
+        request,
+      )) {
         yield chunk;
       }
     }
