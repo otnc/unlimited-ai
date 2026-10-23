@@ -1146,7 +1146,7 @@ interface RequestOptions {
 ```
 
 :::kiritan{locale=en}
-Every function and method that sends a request takes `RequestOptions` as its last argument. Options given to `new AI({ request })` or `setRequestOptions()` apply to every request from that instance, and options given to a single call override them field by field (`headers` are merged).
+Every function and method that sends a request takes `RequestOptions` as its last argument. Options given to `new AI({ request })` or `setRequestOptions()` apply to every request from that instance, and options given to a single call override them field by field. `headers` are merged (header names are case-insensitive), and when both sides have a `signal`, aborting either one cancels the request.
 
 ```ts
 const ai = new AI({
@@ -1183,7 +1183,7 @@ Cancels the request when aborted.
 A response with an error status rejects with ofetch's `FetchError` (`error.status` holds the status code). A timeout or an abort rejects with the signal's reason (a `TimeoutError` or `AbortError`).
 :::
 :::kiritan{locale=ja}
-リクエストを送るすべての関数・メソッドは、最後の引数に `RequestOptions` を受け取ります。`new AI({ request })` や `setRequestOptions()` で渡したオプションはそのインスタンスのすべてのリクエストに適用され、呼び出しごとに渡したオプションがフィールド単位でそれを上書きします (`headers` はマージされます)。
+リクエストを送るすべての関数・メソッドは、最後の引数に `RequestOptions` を受け取ります。`new AI({ request })` や `setRequestOptions()` で渡したオプションはそのインスタンスのすべてのリクエストに適用され、呼び出しごとに渡したオプションがフィールド単位でそれを上書きします。`headers` はマージされ (ヘッダー名の大文字・小文字は区別しません)、両方に `signal` がある場合はどちらを abort してもリクエストがキャンセルされます。
 
 ```ts
 const ai = new AI({

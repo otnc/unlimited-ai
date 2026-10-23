@@ -651,7 +651,7 @@ interface RequestOptions {
 }
 ```
 
-Every function and method that sends a request takes `RequestOptions` as its last argument. Options given to `new AI({ request })` or `setRequestOptions()` apply to every request from that instance, and options given to a single call override them field by field (`headers` are merged).
+Every function and method that sends a request takes `RequestOptions` as its last argument. Options given to `new AI({ request })` or `setRequestOptions()` apply to every request from that instance, and options given to a single call override them field by field. `headers` are merged (header names are case-insensitive), and when both sides have a `signal`, aborting either one cancels the request.
 
 ```ts
 const ai = new AI({

@@ -651,7 +651,7 @@ interface RequestOptions {
 }
 ```
 
-リクエストを送るすべての関数・メソッドは、最後の引数に `RequestOptions` を受け取ります。`new AI({ request })` や `setRequestOptions()` で渡したオプションはそのインスタンスのすべてのリクエストに適用され、呼び出しごとに渡したオプションがフィールド単位でそれを上書きします (`headers` はマージされます)。
+リクエストを送るすべての関数・メソッドは、最後の引数に `RequestOptions` を受け取ります。`new AI({ request })` や `setRequestOptions()` で渡したオプションはそのインスタンスのすべてのリクエストに適用され、呼び出しごとに渡したオプションがフィールド単位でそれを上書きします。`headers` はマージされ (ヘッダー名の大文字・小文字は区別しません)、両方に `signal` がある場合はどちらを abort してもリクエストがキャンセルされます。
 
 ```ts
 const ai = new AI({
