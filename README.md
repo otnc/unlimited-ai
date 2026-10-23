@@ -13,7 +13,7 @@ npm install unlimited-ai
 
 ## unlimited-ai is back!
 
-Rewritten in TypeScript. `axios` replaced with `ky`.  
+Rewritten in TypeScript. `axios` replaced with `ofetch`.\
 Conversation history is now supported via conversation IDs — previously, every call was stateless.
 
 <details>
@@ -26,10 +26,10 @@ Conversation history is now supported via conversation IDs — previously, every
 
 > [!Caution]
 >
-> v6.x and below are no longer supported.  
+> v6.x and below are no longer supported.\
 > Some functions no longer work or have changed. Please update to v7 or later.
 
----
+***
 
 ## Quick start
 
@@ -58,7 +58,7 @@ const reply = await generate('gpt-4o', [{ role: 'user', content: 'Hello!' }]);
 console.log(reply);
 ```
 
----
+***
 
 ## `new AI(init?)`
 
@@ -67,21 +67,25 @@ new AI(init?: {
   model?: string;
   system?: string;
   messages?: Message[];
+  request?: RequestOptions;
 })
 ```
 
 Creates a new AI instance.
 
-**`init.model`** `string` *(optional)*  
+**`init.model`** `string` *(optional)*\
 Model ID to use (e.g. `'gpt-4o'`).
 
-**`init.system`** `string` *(optional)*  
+**`init.system`** `string` *(optional)*\
 System prompt. Prepended to every request as a `system` message.
 
-**`init.messages`** `Message[]` *(optional)*  
+**`init.messages`** `Message[]` *(optional)*\
 Initial static context. These messages are prepended to every request.
 
----
+**`init.request`** `RequestOptions` *(optional)*\
+Default [request options](#request-options) for every request made by this instance.
+
+***
 
 ### Examples
 
@@ -182,13 +186,13 @@ const reply = await ai
 console.log(reply);
 ```
 
----
+***
 
 ### Static context
 
 Static context messages are prepended to every request. Useful for system prompts and few-shot examples. All methods return `this` and are chainable.
 
----
+***
 
 #### `setModel(model, search?)`
 
@@ -198,13 +202,13 @@ setModel(model: string, search?: boolean): this
 
 Sets the model for subsequent requests.
 
-**`model`** `string`  
+**`model`** `string`\
 Model ID (e.g. `'gpt-4o'`).
 
-**`search`** `boolean` *(optional, default: `false`)*  
+**`search`** `boolean` *(optional, default: `false`)*\
 When `true`, runs a fuzzy search via `searchModels` and uses the closest matching model ID.
 
----
+***
 
 #### `setSystem(content)`
 
@@ -214,10 +218,10 @@ setSystem(content: string): this
 
 Sets or replaces the system prompt. If a `system` message already exists in the static context, it is replaced in-place; otherwise one is prepended.
 
-**`content`** `string`  
+**`content`** `string`\
 System prompt text.
 
----
+***
 
 #### `setMessages(messages)`
 
@@ -227,10 +231,10 @@ setMessages(messages: Message[]): this
 
 Replaces the entire static context array.
 
-**`messages`** `Message[]`  
+**`messages`** `Message[]`\
 New static context. Overwrites the previous value entirely.
 
----
+***
 
 #### `addMessage(message)`
 
@@ -240,10 +244,10 @@ addMessage(message: Message): this
 
 Appends a single message to the static context.
 
-**`message`** `Message`  
+**`message`** `Message`\
 Message to append (`{ role, content }`).
 
----
+***
 
 #### `removeMessage(index)`
 
@@ -253,10 +257,10 @@ removeMessage(index: number): this
 
 Removes a message from the static context by index. Throws `RangeError` if the index is out of bounds.
 
-**`index`** `number`  
+**`index`** `number`\
 Zero-based index of the message to remove.
 
----
+***
 
 #### `clearMessages()`
 
@@ -266,7 +270,20 @@ clearMessages(): this
 
 Removes all messages from the static context.
 
----
+***
+
+#### `setRequestOptions(options)`
+
+```ts
+setRequestOptions(options: RequestOptions): this
+```
+
+Replaces the instance's default [request options](#request-options). Options passed to a single call still override them.
+
+**`options`** `RequestOptions`\
+New default request options. Overwrites the previous value entirely.
+
+***
 
 #### `getFormat()`
 
@@ -276,27 +293,30 @@ getFormat(): { model: string; messages: Message[] }
 
 Returns a snapshot of the current model and static context. The returned `messages` array is a shallow copy — mutating it does not affect the instance.
 
----
+***
 
-#### `generate(raw?)`
+#### `generate(raw?, options?)`
 
 ```ts
-generate(raw?: false): Promise<string>
-generate(raw: true): Promise<CompletionResponse>
+generate(raw?: false, options?: RequestOptions): Promise<string>
+generate(raw: true, options?: RequestOptions): Promise<CompletionResponse>
 ```
 
 Sends the current static context (`this.messages`) as-is and returns the reply.
 
-**`raw`** `boolean` *(optional, default: `false`)*  
+**`raw`** `boolean` *(optional, default: `false`)*\
 When `true`, returns the full `CompletionResponse` object instead of just the reply string.
 
----
+**`options`** `RequestOptions` *(optional)*\
+[Request options](#request-options) for this call only. Merged over the instance's defaults.
+
+***
 
 ### Conversations
 
 Per-conversation history is managed automatically and kept separate from the static context. All methods return `this` and are chainable unless noted otherwise.
 
----
+***
 
 #### `useConversation(id)`
 
@@ -306,15 +326,15 @@ useConversation(id: string | null): this
 
 Sets the active conversation for subsequent `ask` and `stream` calls. Pass `null` to return to stateless mode.
 
-**`id`** `string | null`  
+**`id`** `string | null`\
 Conversation ID to activate. Any non-empty string is valid (UUID, snowflake, username, etc.). When a new ID is used, an empty history is created automatically.
 
----
+***
 
-#### `ask(prompt, id?)`
+#### `ask(prompt, id?, options?)`
 
 ```ts
-ask(prompt: string, id?: string): Promise<string>
+ask(prompt: string, id?: string, options?: RequestOptions): Promise<string>
 ```
 
 Sends a message and returns the reply.
@@ -322,35 +342,41 @@ Sends a message and returns the reply.
 - If `id` is provided, or an active conversation is set via `useConversation`, the user message and reply are appended to that conversation's history.
 - If no ID is active, the call is stateless — only the static context and this prompt are sent, and nothing is saved.
 
-**`prompt`** `string`  
+**`prompt`** `string`\
 The user message to send.
 
-**`id`** `string` *(optional)*  
-Conversation ID. Overrides the active conversation set by `useConversation` for this call only.
+**`id`** `string` *(optional)*\
+Conversation ID. Overrides the active conversation set by `useConversation` for this call only. Pass `undefined` to use the active conversation while still passing `options`.
 
-**Returns** `Promise<string>`  
+**`options`** `RequestOptions` *(optional)*\
+[Request options](#request-options) for this call only. Merged over the instance's defaults.
+
+**Returns** `Promise<string>`\
 The assistant's reply.
 
----
+***
 
-#### `stream(prompt, id?)`
+#### `stream(prompt, id?, options?)`
 
 ```ts
-stream(prompt: string, id?: string): AsyncGenerator<string>
+stream(prompt: string, id?: string, options?: RequestOptions): AsyncGenerator<string>
 ```
 
 Same as `ask`, but yields the reply as chunks as they arrive. After the generator is exhausted, the full assembled reply is saved to the conversation history (if an ID is active).
 
-**`prompt`** `string`  
+**`prompt`** `string`\
 The user message to send.
 
-**`id`** `string` *(optional)*  
+**`id`** `string` *(optional)*\
 Conversation ID. Overrides the active conversation for this call only.
 
-**Yields** `string`  
+**`options`** `RequestOptions` *(optional)*\
+[Request options](#request-options) for this call only. Merged over the instance's defaults.
+
+**Yields** `string`\
 Successive text chunks of the reply.
 
----
+***
 
 #### `listConversations()`
 
@@ -360,7 +386,7 @@ listConversations(): string[]
 
 Returns an array of all known conversation IDs.
 
----
+***
 
 #### `getConversationMessages(id)`
 
@@ -370,10 +396,10 @@ getConversationMessages(id: string): Message[]
 
 Returns a copy of the message history for the given conversation. Mutating the returned array does not affect the stored history.
 
-**`id`** `string`  
+**`id`** `string`\
 Conversation ID.
 
----
+***
 
 #### `clearConversation(id)`
 
@@ -383,10 +409,10 @@ clearConversation(id: string): this
 
 Empties the message history for the given conversation without removing the conversation itself.
 
-**`id`** `string`  
+**`id`** `string`\
 Conversation ID.
 
----
+***
 
 #### `deleteConversation(id)`
 
@@ -396,10 +422,10 @@ deleteConversation(id: string): this
 
 Removes the conversation and its history entirely.
 
-**`id`** `string`  
+**`id`** `string`\
 Conversation ID.
 
----
+***
 
 #### `exportConversations(id?)`
 
@@ -413,10 +439,10 @@ Exports conversation history as a plain, JSON-serializable value.
 - When `id` is provided, returns a copy of that conversation's `Message[]`.
 - When called without arguments, returns a `ConversationStore` (a plain object keyed by conversation ID) containing copies of all conversations.
 
-**`id`** `string` *(optional)*  
+**`id`** `string` *(optional)*\
 Conversation ID. When omitted, all conversations are exported.
 
----
+***
 
 #### `importConversations(data, replace?)`
 
@@ -426,21 +452,21 @@ importConversations(data: ConversationStore, replace?: boolean): this
 
 Loads conversations from a plain object (e.g. parsed from JSON). Useful for restoring history after a restart.
 
-**`data`** `ConversationStore`  
+**`data`** `ConversationStore`\
 Plain object mapping conversation IDs to `Message[]` arrays.
 
-**`replace`** `boolean` *(optional, default: `false`)*  
+**`replace`** `boolean` *(optional, default: `false`)*\
 When `false` (default), incoming conversations are merged with existing ones. When `true`, all existing conversations are cleared before importing.
 
----
+***
 
 ## Functional API
 
-### `generate(model, messages, raw?)`
+### `generate(model, messages, raw?, options?)`
 
 ```ts
-generate(model: string, messages: Message[], raw?: false): Promise<string>
-generate(model: string, messages: Message[], raw: true): Promise<CompletionResponse>
+generate(model: string, messages: Message[], raw?: false, options?: RequestOptions): Promise<string>
+generate(model: string, messages: Message[], raw: true, options?: RequestOptions): Promise<CompletionResponse>
 ```
 
 ```ts
@@ -458,21 +484,24 @@ console.log(raw.choices[0]?.message.content);
 
 Sends a chat completion request and returns the result.
 
-**`model`** `string`  
+**`model`** `string`\
 Model ID (e.g. `'gpt-4o'`).
 
-**`messages`** `Message[]`  
+**`messages`** `Message[]`\
 Conversation messages to send.
 
-**`raw`** `boolean` *(optional, default: `false`)*  
+**`raw`** `boolean` *(optional, default: `false`)*\
 When `true`, returns the full `CompletionResponse` object instead of just the reply string.
 
----
+**`options`** `RequestOptions` *(optional)*\
+[Request options](#request-options).
 
-### `ask(model, prompt, system?)`
+***
+
+### `ask(model, prompt, system?, options?)`
 
 ```ts
-ask(model: string, prompt: string, system?: string): Promise<string>
+ask(model: string, prompt: string, system?: string, options?: RequestOptions): Promise<string>
 ```
 
 ```ts
@@ -487,21 +516,24 @@ console.log(reply);
 
 One-shot helper that sends a single user message and returns the reply.
 
-**`model`** `string`  
+**`model`** `string`\
 Model ID.
 
-**`prompt`** `string`  
+**`prompt`** `string`\
 The user message to send.
 
-**`system`** `string` *(optional)*  
+**`system`** `string` *(optional)*\
 System prompt. If provided, it is prepended as a `system` message.
 
----
+**`options`** `RequestOptions` *(optional)*\
+[Request options](#request-options).
 
-### `stream(model, messages)`
+***
+
+### `stream(model, messages, options?)`
 
 ```ts
-stream(model: string, messages: Message[]): AsyncGenerator<string>
+stream(model: string, messages: Message[], options?: RequestOptions): AsyncGenerator<string>
 ```
 
 ```ts
@@ -517,21 +549,24 @@ for await (const chunk of stream('gpt-4o', [{ role: 'user', content: 'Hello!' }]
 
 Sends a chat completion request with streaming enabled and yields reply chunks as they arrive.
 
-**`model`** `string`  
+**`model`** `string`\
 Model ID.
 
-**`messages`** `Message[]`  
+**`messages`** `Message[]`\
 Conversation messages to send.
 
-**Yields** `string`  
+**`options`** `RequestOptions` *(optional)*\
+[Request options](#request-options).
+
+**Yields** `string`\
 Successive text chunks of the reply.
 
----
+***
 
-### `models()`
+### `models(options?)`
 
 ```ts
-models(): Promise<string[]>
+models(options?: RequestOptions): Promise<string[]>
 ```
 
 ```ts
@@ -546,12 +581,15 @@ const list = await models();
 
 Fetches the list of available model IDs from the API.
 
----
+**`options`** `RequestOptions` *(optional)*\
+[Request options](#request-options).
 
-### `searchModels(word)`
+***
+
+### `searchModels(word, options?)`
 
 ```ts
-searchModels(word: string): Promise<string[]>
+searchModels(word: string, options?: RequestOptions): Promise<string[]>
 ```
 
 ```ts
@@ -566,13 +604,16 @@ const reply = await generate(model, [{ role: 'user', content: 'Hi!' }]);
 
 Fuzzy-searches available model IDs by keyword and returns the closest matches.
 
-**`word`** `string`  
+**`word`** `string`\
 Search keyword.
 
-**Returns** `Promise<string[]>`  
+**`options`** `RequestOptions` *(optional)*\
+[Request options](#request-options) for fetching the model list.
+
+**Returns** `Promise<string[]>`\
 Matching model IDs, ordered by similarity.
 
----
+***
 
 ### `config`
 
@@ -590,13 +631,63 @@ console.log(config.MODELS_URL); // https://api.voids.top/v1/models
 
 A read-only object with the API endpoint URLs used internally.
 
-**`config.API_URL`** `string`  
+**`config.API_URL`** `string`\
 Chat completions endpoint. Default: `https://api.voids.top/v1/chat/completions`
 
-**`config.MODELS_URL`** `string`  
+**`config.MODELS_URL`** `string`\
 Models list endpoint. Default: `https://api.voids.top/v1/models`
 
----
+***
+
+## Request options
+
+```ts
+interface RequestOptions {
+  retry?: number | false;
+  retryDelay?: number;
+  timeout?: number;
+  headers?: Record<string, string>;
+  signal?: AbortSignal;
+}
+```
+
+Every function and method that sends a request takes `RequestOptions` as its last argument. Options given to `new AI({ request })` or `setRequestOptions()` apply to every request from that instance, and options given to a single call override them field by field (`headers` are merged).
+
+```ts
+const ai = new AI({
+  model: 'gpt-4o',
+  request: { retry: 2, retryDelay: 1000, timeout: 30_000 },
+});
+
+// Disable retrying for this call only
+await ai.ask('Hello!', undefined, { retry: false });
+
+// Cancel a stream after 5 seconds
+const controller = new AbortController();
+setTimeout(() => controller.abort(), 5000);
+for await (const chunk of ai.stream('Tell me a story.', undefined, { signal: controller.signal })) {
+  process.stdout.write(chunk);
+}
+```
+
+**`retry`** `number | false` *(optional)*\
+Number of retries after a failed attempt, or `false` to disable retrying. When omitted, ofetch's default applies: chat completion requests (POST) are not retried, and model list requests (GET) are retried once. Network errors and responses with status 408, 429, 500, 502, 503 or 504 are retried.
+
+**`retryDelay`** `number` *(optional, default: `0`)*\
+Delay between retries in milliseconds.
+
+**`timeout`** `number` *(optional)*\
+Time limit in milliseconds for the whole call, including retries. For `stream`, it also covers reading the reply, so leave enough time for the full answer. No limit when omitted.
+
+**`headers`** `Record<string, string>` *(optional)*\
+Extra request headers.
+
+**`signal`** `AbortSignal` *(optional)*\
+Cancels the request when aborted.
+
+A response with an error status rejects with ofetch's `FetchError` (`error.status` holds the status code). A timeout or an abort rejects with the signal's reason (a `TimeoutError` or `AbortError`).
+
+***
 
 ## Types
 
@@ -634,9 +725,17 @@ interface StreamChunk {
     finish_reason: string | null;
   }>;
 }
+
+interface RequestOptions {
+  retry?: number | false;
+  retryDelay?: number;
+  timeout?: number;
+  headers?: Record<string, string>;
+  signal?: AbortSignal;
+}
 ```
 
----
+***
 
 ## Support
 

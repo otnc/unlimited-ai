@@ -13,7 +13,7 @@ npm install unlimited-ai
 
 ## unlimited-ai is back!
 
-TypeScript で書き直されました。`axios` は `ky` に置き換えられています。  
+TypeScript で書き直されました。`axios` は `ofetch` に置き換えられています。\
 会話 ID による履歴管理に対応しました — 以前はすべての呼び出しがステートレスでした。
 
 <details>
@@ -26,10 +26,10 @@ TypeScript で書き直されました。`axios` は `ky` に置き換えられ�
 
 > [!Caution]
 >
-> v6.x 以下はサポートされなくなりました。  
+> v6.x 以下はサポートされなくなりました。\
 > 一部の関数はもう動かない、または仕様が変更されています。v7 かそれ以降に更新してください。
 
----
+***
 
 ## クイックスタート
 
@@ -43,7 +43,7 @@ const ai = new AI({ model: 'gpt-4o', system: 'あなたは親切なアシスタ�
 console.log(await ai.ask('こんにちは！'));
 ```
 
-関数型 API も使えます：
+関数型 API も使えます:
 
 ```ts
 // ESM
@@ -58,7 +58,7 @@ const reply = await generate('gpt-4o', [{ role: 'user', content: 'こんにち�
 console.log(reply);
 ```
 
----
+***
 
 ## `new AI(init?)`
 
@@ -67,21 +67,25 @@ new AI(init?: {
   model?: string;
   system?: string;
   messages?: Message[];
+  request?: RequestOptions;
 })
 ```
 
 AI インスタンスを作成します。
 
-**`init.model`** `string` *(省略可)*  
-使用するモデル ID（例: `'gpt-4o'`）。
+**`init.model`** `string` *(省略可)*\
+使用するモデル ID (例: `'gpt-4o'`)。
 
-**`init.system`** `string` *(省略可)*  
+**`init.system`** `string` *(省略可)*\
 システムプロンプト。すべてのリクエストに `system` メッセージとして先頭に付加されます。
 
-**`init.messages`** `Message[]` *(省略可)*  
+**`init.messages`** `Message[]` *(省略可)*\
 静的コンテキストの初期値。すべてのリクエストに先頭から付加されます。
 
----
+**`init.request`** `RequestOptions` *(省略可)*\
+このインスタンスが送るすべてのリクエストに適用する[リクエストオプション](#リクエストオプション)の既定値。
+
+***
 
 ### 使用例
 
@@ -100,7 +104,7 @@ console.log(await ai.ask('TypeScript とは何ですか？'));
 console.log(await ai.ask('型システムについて教えてください。')); // 会話履歴ごと送信
 ```
 
-**ユーザーごとに独立した履歴（ID をその場で指定）**
+**ユーザーごとに独立した履歴 (ID をその場で指定)**
 
 ```ts
 // ESM
@@ -119,7 +123,7 @@ await ai.ask('覚えてる？', 'user-alice'); // alice の履歴が復元され
 
 ```ts
 const reply = await ai.ask('2 + 2 は？');
-// 静的コンテキスト＋このプロンプトだけを送信。何も保存されない。
+// 静的コンテキスト + このプロンプトだけを送信。何も保存されない。
 ```
 
 **ストリーミング**
@@ -164,7 +168,7 @@ console.log(await ai.ask('こんにちは！'));
 writeFileSync('conversations.json', JSON.stringify(ai.exportConversations()));
 ```
 
-**従来の書き方（手動で履歴を管理）**
+**従来の書き方 (手動で履歴を管理)**
 
 ```ts
 // ESM
@@ -182,13 +186,13 @@ const reply = await ai
 console.log(reply);
 ```
 
----
+***
 
 ### 静的コンテキスト
 
 静的コンテキストのメッセージはすべてのリクエストに先頭から付加されます。システムプロンプトや few-shot 例の設定に使います。すべてのメソッドは `this` を返し、チェーン可能です。
 
----
+***
 
 #### `setModel(model, search?)`
 
@@ -198,13 +202,13 @@ setModel(model: string, search?: boolean): this
 
 以降のリクエストで使用するモデルを設定します。
 
-**`model`** `string`  
-モデル ID（例: `'gpt-4o'`）。
+**`model`** `string`\
+モデル ID (例: `'gpt-4o'`)。
 
-**`search`** `boolean` *(省略可、デフォルト: `false`)*  
+**`search`** `boolean` *(省略可、デフォルト: `false`)*\
 `true` の場合、`searchModels` によるファジー検索を行い、最も近いモデル ID を使用します。
 
----
+***
 
 #### `setSystem(content)`
 
@@ -214,10 +218,10 @@ setSystem(content: string): this
 
 システムプロンプトを設定または置き換えます。静的コンテキストに `system` メッセージが既に存在する場合はその場で置き換え、なければ先頭に追加します。
 
-**`content`** `string`  
+**`content`** `string`\
 システムプロンプトのテキスト。
 
----
+***
 
 #### `setMessages(messages)`
 
@@ -227,10 +231,10 @@ setMessages(messages: Message[]): this
 
 静的コンテキスト全体を置き換えます。
 
-**`messages`** `Message[]`  
+**`messages`** `Message[]`\
 新しい静的コンテキスト。既存の値をすべて上書きします。
 
----
+***
 
 #### `addMessage(message)`
 
@@ -240,10 +244,10 @@ addMessage(message: Message): this
 
 静的コンテキストの末尾にメッセージを 1 件追加します。
 
-**`message`** `Message`  
-追加するメッセージ（`{ role, content }`）。
+**`message`** `Message`\
+追加するメッセージ (`{ role, content }`)。
 
----
+***
 
 #### `removeMessage(index)`
 
@@ -253,10 +257,10 @@ removeMessage(index: number): this
 
 静的コンテキストから指定インデックスのメッセージを削除します。インデックスが範囲外の場合は `RangeError` をスローします。
 
-**`index`** `number`  
+**`index`** `number`\
 削除するメッセージのゼロ始まりインデックス。
 
----
+***
 
 #### `clearMessages()`
 
@@ -266,7 +270,20 @@ clearMessages(): this
 
 静的コンテキストのメッセージをすべて削除します。
 
----
+***
+
+#### `setRequestOptions(options)`
+
+```ts
+setRequestOptions(options: RequestOptions): this
+```
+
+インスタンスの既定の[リクエストオプション](#リクエストオプション)を置き換えます。呼び出しごとに渡したオプションはこれより優先されます。
+
+**`options`** `RequestOptions`\
+新しい既定のリクエストオプション。既存の値をすべて上書きします。
+
+***
 
 #### `getFormat()`
 
@@ -276,27 +293,30 @@ getFormat(): { model: string; messages: Message[] }
 
 現在のモデルと静的コンテキストのスナップショットを返します。返される `messages` 配列はシャローコピーであり、変更してもインスタンスには影響しません。
 
----
+***
 
-#### `generate(raw?)`
+#### `generate(raw?, options?)`
 
 ```ts
-generate(raw?: false): Promise<string>
-generate(raw: true): Promise<CompletionResponse>
+generate(raw?: false, options?: RequestOptions): Promise<string>
+generate(raw: true, options?: RequestOptions): Promise<CompletionResponse>
 ```
 
-現在の静的コンテキスト（`this.messages`）をそのまま送信し、返答を返します。
+現在の静的コンテキスト (`this.messages`) をそのまま送信し、返答を返します。
 
-**`raw`** `boolean` *(省略可、デフォルト: `false`)*  
+**`raw`** `boolean` *(省略可、デフォルト: `false`)*\
 `true` の場合、返答文字列の代わりに `CompletionResponse` オブジェクト全体を返します。
 
----
+**`options`** `RequestOptions` *(省略可)*\
+この呼び出しだけに適用する[リクエストオプション](#リクエストオプション)。インスタンスの既定値に上書きでマージされます。
+
+***
 
 ### 会話管理
 
 会話ごとの履歴は自動管理され、静的コンテキストとは独立して保持されます。特記のないメソッドはすべて `this` を返し、チェーン可能です。
 
----
+***
 
 #### `useConversation(id)`
 
@@ -306,15 +326,15 @@ useConversation(id: string | null): this
 
 以降の `ask` / `stream` 呼び出しで使用するアクティブな会話を設定します。`null` を渡すとステートレスモードに戻ります。
 
-**`id`** `string | null`  
-有効化する会話 ID。空でない任意の文字列が使えます（UUID、Snowflake、ユーザー名など）。新しい ID を指定した場合、空の履歴が自動的に作成されます。
+**`id`** `string | null`\
+有効化する会話 ID。空でない任意の文字列が使えます (UUID、Snowflake、ユーザー名など)。新しい ID を指定した場合、空の履歴が自動的に作成されます。
 
----
+***
 
-#### `ask(prompt, id?)`
+#### `ask(prompt, id?, options?)`
 
 ```ts
-ask(prompt: string, id?: string): Promise<string>
+ask(prompt: string, id?: string, options?: RequestOptions): Promise<string>
 ```
 
 メッセージを送信し、返答を返します。
@@ -322,35 +342,41 @@ ask(prompt: string, id?: string): Promise<string>
 - `id` が指定されているか、`useConversation` でアクティブな会話が設定されている場合、ユーザーメッセージと返答がその会話の履歴に追加されます。
 - ID が未指定の場合はステートレス — 静的コンテキストとこのプロンプトのみを送信し、何も保存されません。
 
-**`prompt`** `string`  
+**`prompt`** `string`\
 送信するユーザーメッセージ。
 
-**`id`** `string` *(省略可)*  
-会話 ID。このメソッド呼び出しの間だけ、`useConversation` で設定したアクティブな会話を上書きします。
+**`id`** `string` *(省略可)*\
+会話 ID。このメソッド呼び出しの間だけ、`useConversation` で設定したアクティブな会話を上書きします。アクティブな会話のまま `options` だけ渡したいときは `undefined` を渡してください。
 
-**戻り値** `Promise<string>`  
+**`options`** `RequestOptions` *(省略可)*\
+この呼び出しだけに適用する[リクエストオプション](#リクエストオプション)。インスタンスの既定値に上書きでマージされます。
+
+**戻り値** `Promise<string>`\
 アシスタントの返答。
 
----
+***
 
-#### `stream(prompt, id?)`
+#### `stream(prompt, id?, options?)`
 
 ```ts
-stream(prompt: string, id?: string): AsyncGenerator<string>
+stream(prompt: string, id?: string, options?: RequestOptions): AsyncGenerator<string>
 ```
 
-`ask` と同じですが、返答をチャンク単位でストリーミングします。ジェネレーターが完了した後、組み立てた全文が会話履歴に保存されます（ID が有効な場合）。
+`ask` と同じですが、返答をチャンク単位でストリーミングします。ジェネレーターが完了した後、組み立てた全文が会話履歴に保存されます (ID が有効な場合)。
 
-**`prompt`** `string`  
+**`prompt`** `string`\
 送信するユーザーメッセージ。
 
-**`id`** `string` *(省略可)*  
+**`id`** `string` *(省略可)*\
 会話 ID。このメソッド呼び出しの間だけアクティブな会話を上書きします。
 
-**Yields** `string`  
+**`options`** `RequestOptions` *(省略可)*\
+この呼び出しだけに適用する[リクエストオプション](#リクエストオプション)。インスタンスの既定値に上書きでマージされます。
+
+**Yields** `string`\
 返答のテキストチャンク。
 
----
+***
 
 #### `listConversations()`
 
@@ -360,7 +386,7 @@ listConversations(): string[]
 
 既存のすべての会話 ID の配列を返します。
 
----
+***
 
 #### `getConversationMessages(id)`
 
@@ -370,10 +396,10 @@ getConversationMessages(id: string): Message[]
 
 指定した会話のメッセージ履歴のコピーを返します。返された配列を変更しても、保存済みの履歴には影響しません。
 
-**`id`** `string`  
+**`id`** `string`\
 会話 ID。
 
----
+***
 
 #### `clearConversation(id)`
 
@@ -383,10 +409,10 @@ clearConversation(id: string): this
 
 指定した会話のメッセージ履歴を空にします。会話そのものは削除されません。
 
-**`id`** `string`  
+**`id`** `string`\
 会話 ID。
 
----
+***
 
 #### `deleteConversation(id)`
 
@@ -396,10 +422,10 @@ deleteConversation(id: string): this
 
 指定した会話とその履歴を完全に削除します。
 
-**`id`** `string`  
+**`id`** `string`\
 会話 ID。
 
----
+***
 
 #### `exportConversations(id?)`
 
@@ -411,12 +437,12 @@ exportConversations(): ConversationStore
 会話履歴を JSON シリアライズ可能なプレーン値としてエクスポートします。
 
 - `id` を指定した場合、その会話の `Message[]` のコピーを返します。
-- 引数なしの場合、すべての会話を含む `ConversationStore`（会話 ID をキーとするプレーンオブジェクト）を返します。
+- 引数なしの場合、すべての会話を含む `ConversationStore` (会話 ID をキーとするプレーンオブジェクト) を返します。
 
-**`id`** `string` *(省略可)*  
+**`id`** `string` *(省略可)*\
 会話 ID。省略するとすべての会話をエクスポートします。
 
----
+***
 
 #### `importConversations(data, replace?)`
 
@@ -424,23 +450,23 @@ exportConversations(): ConversationStore
 importConversations(data: ConversationStore, replace?: boolean): this
 ```
 
-プレーンオブジェクト（JSON パース済みなど）から会話を読み込みます。再起動後の履歴復元に使います。
+プレーンオブジェクト (JSON パース済みなど) から会話を読み込みます。再起動後の履歴復元に使います。
 
-**`data`** `ConversationStore`  
+**`data`** `ConversationStore`\
 会話 ID から `Message[]` 配列へのマッピングオブジェクト。
 
-**`replace`** `boolean` *(省略可、デフォルト: `false`)*  
-`false`（デフォルト）の場合、既存の会話にインポートした内容をマージします。`true` の場合、インポート前に既存の会話をすべてクリアします。
+**`replace`** `boolean` *(省略可、デフォルト: `false`)*\
+`false` (デフォルト) の場合、既存の会話にインポートした内容をマージします。`true` の場合、インポート前に既存の会話をすべてクリアします。
 
----
+***
 
 ## 関数型 API
 
-### `generate(model, messages, raw?)`
+### `generate(model, messages, raw?, options?)`
 
 ```ts
-generate(model: string, messages: Message[], raw?: false): Promise<string>
-generate(model: string, messages: Message[], raw: true): Promise<CompletionResponse>
+generate(model: string, messages: Message[], raw?: false, options?: RequestOptions): Promise<string>
+generate(model: string, messages: Message[], raw: true, options?: RequestOptions): Promise<CompletionResponse>
 ```
 
 ```ts
@@ -458,21 +484,24 @@ console.log(raw.choices[0]?.message.content);
 
 チャット補完リクエストを送信し、結果を返します。
 
-**`model`** `string`  
-モデル ID（例: `'gpt-4o'`）。
+**`model`** `string`\
+モデル ID (例: `'gpt-4o'`)。
 
-**`messages`** `Message[]`  
+**`messages`** `Message[]`\
 送信する会話メッセージ。
 
-**`raw`** `boolean` *(省略可、デフォルト: `false`)*  
+**`raw`** `boolean` *(省略可、デフォルト: `false`)*\
 `true` の場合、返答文字列の代わりに `CompletionResponse` オブジェクト全体を返します。
 
----
+**`options`** `RequestOptions` *(省略可)*\
+[リクエストオプション](#リクエストオプション)。
 
-### `ask(model, prompt, system?)`
+***
+
+### `ask(model, prompt, system?, options?)`
 
 ```ts
-ask(model: string, prompt: string, system?: string): Promise<string>
+ask(model: string, prompt: string, system?: string, options?: RequestOptions): Promise<string>
 ```
 
 ```ts
@@ -487,21 +516,24 @@ console.log(reply);
 
 ユーザーメッセージを 1 件送信して返答を返すシンプルなヘルパーです。
 
-**`model`** `string`  
+**`model`** `string`\
 モデル ID。
 
-**`prompt`** `string`  
+**`prompt`** `string`\
 送信するユーザーメッセージ。
 
-**`system`** `string` *(省略可)*  
+**`system`** `string` *(省略可)*\
 システムプロンプト。指定した場合、`system` メッセージとして先頭に付加されます。
 
----
+**`options`** `RequestOptions` *(省略可)*\
+[リクエストオプション](#リクエストオプション)。
 
-### `stream(model, messages)`
+***
+
+### `stream(model, messages, options?)`
 
 ```ts
-stream(model: string, messages: Message[]): AsyncGenerator<string>
+stream(model: string, messages: Message[], options?: RequestOptions): AsyncGenerator<string>
 ```
 
 ```ts
@@ -517,21 +549,24 @@ for await (const chunk of stream('gpt-4o', [{ role: 'user', content: 'こんに�
 
 ストリーミングを有効にしてチャット補完リクエストを送信し、返答チャンクを順次 yield します。
 
-**`model`** `string`  
+**`model`** `string`\
 モデル ID。
 
-**`messages`** `Message[]`  
+**`messages`** `Message[]`\
 送信する会話メッセージ。
 
-**Yields** `string`  
+**`options`** `RequestOptions` *(省略可)*\
+[リクエストオプション](#リクエストオプション)。
+
+**Yields** `string`\
 返答のテキストチャンク。
 
----
+***
 
-### `models()`
+### `models(options?)`
 
 ```ts
-models(): Promise<string[]>
+models(options?: RequestOptions): Promise<string[]>
 ```
 
 ```ts
@@ -546,12 +581,15 @@ const list = await models();
 
 API から利用可能なモデル ID の一覧を取得して返します。
 
----
+**`options`** `RequestOptions` *(省略可)*\
+[リクエストオプション](#リクエストオプション)。
 
-### `searchModels(word)`
+***
+
+### `searchModels(word, options?)`
 
 ```ts
-searchModels(word: string): Promise<string[]>
+searchModels(word: string, options?: RequestOptions): Promise<string[]>
 ```
 
 ```ts
@@ -566,13 +604,16 @@ const reply = await generate(model, [{ role: 'user', content: 'こんにちは�
 
 キーワードで利用可能なモデル ID をファジー検索し、近い順に返します。
 
-**`word`** `string`  
+**`word`** `string`\
 検索キーワード。
 
-**戻り値** `Promise<string[]>`  
+**`options`** `RequestOptions` *(省略可)*\
+モデル一覧の取得に使う[リクエストオプション](#リクエストオプション)。
+
+**戻り値** `Promise<string[]>`\
 類似度の高い順に並んだモデル ID。
 
----
+***
 
 ### `config`
 
@@ -590,13 +631,63 @@ console.log(config.MODELS_URL); // https://api.voids.top/v1/models
 
 内部で使用している API エンドポイント URL を持つ読み取り専用オブジェクトです。
 
-**`config.API_URL`** `string`  
+**`config.API_URL`** `string`\
 チャット補完エンドポイント。デフォルト: `https://api.voids.top/v1/chat/completions`
 
-**`config.MODELS_URL`** `string`  
+**`config.MODELS_URL`** `string`\
 モデル一覧エンドポイント。デフォルト: `https://api.voids.top/v1/models`
 
----
+***
+
+## リクエストオプション
+
+```ts
+interface RequestOptions {
+  retry?: number | false;
+  retryDelay?: number;
+  timeout?: number;
+  headers?: Record<string, string>;
+  signal?: AbortSignal;
+}
+```
+
+リクエストを送るすべての関数・メソッドは、最後の引数に `RequestOptions` を受け取ります。`new AI({ request })` や `setRequestOptions()` で渡したオプションはそのインスタンスのすべてのリクエストに適用され、呼び出しごとに渡したオプションがフィールド単位でそれを上書きします (`headers` はマージされます)。
+
+```ts
+const ai = new AI({
+  model: 'gpt-4o',
+  request: { retry: 2, retryDelay: 1000, timeout: 30_000 },
+});
+
+// この呼び出しだけリトライを無効化
+await ai.ask('こんにちは！', undefined, { retry: false });
+
+// 5 秒後にストリームをキャンセル
+const controller = new AbortController();
+setTimeout(() => controller.abort(), 5000);
+for await (const chunk of ai.stream('物語を聞かせて。', undefined, { signal: controller.signal })) {
+  process.stdout.write(chunk);
+}
+```
+
+**`retry`** `number | false` *(省略可)*\
+失敗後にリトライする回数。`false` でリトライを無効化します。省略時は ofetch の既定に従い、チャット補完 (POST) はリトライせず、モデル一覧の取得 (GET) は 1 回リトライします。リトライの対象はネットワークエラーと、ステータス 408・429・500・502・503・504 のレスポンスです。
+
+**`retryDelay`** `number` *(省略可、デフォルト: `0`)*\
+リトライの間隔 (ミリ秒)。
+
+**`timeout`** `number` *(省略可)*\
+リトライを含めた呼び出し全体の制限時間 (ミリ秒)。`stream` では返答の受信も含むため、全文を受け取れるだけの時間を指定してください。省略時は無制限です。
+
+**`headers`** `Record<string, string>` *(省略可)*\
+追加のリクエストヘッダー。
+
+**`signal`** `AbortSignal` *(省略可)*\
+abort されるとリクエストをキャンセルします。
+
+エラーステータスのレスポンスは ofetch の `FetchError` で reject されます (`error.status` にステータスコードが入ります)。タイムアウトや abort の場合は signal の reason (`TimeoutError` または `AbortError`) で reject されます。
+
+***
 
 ## 型定義
 
@@ -634,9 +725,17 @@ interface StreamChunk {
     finish_reason: string | null;
   }>;
 }
+
+interface RequestOptions {
+  retry?: number | false;
+  retryDelay?: number;
+  timeout?: number;
+  headers?: Record<string, string>;
+  signal?: AbortSignal;
+}
 ```
 
----
+***
 
 ## サポート
 
